@@ -15,7 +15,7 @@ function TooltipPortal({ children }) {
 
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxhf3YWW1k2kJpM_0bvk_q_9g_CDay1RgzbJvmjy7WOe-qHIUY_nhC8MRE6WjcP98vfxA/exec";
-const IMG_LOGO   = "";
+const IMG_LOGO   = "https://i.imgur.com/mc6kH1m.jpg";
 const IMG_FRITE  = "";
 const IMG_PIMENT = "";
 const IMG_OIGNON = "";
@@ -76,8 +76,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.5.0";
-const APP_BUILD = "10/03/2026 17:55";
+const APP_VERSION = "v3.6.0";
+const APP_BUILD = "10/03/2026 19:00";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -1082,10 +1082,10 @@ export default function App() {
                   <span style={{fontSize:20,lineHeight:1}}>+</span> Nouveau processus
                 </button>
               </div>
-              <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><select style={S.select} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
-              <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><select style={S.select} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-              <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><select style={S.select} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select></div>
-              <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><select style={S.select} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterPillar!=="ALL"?"28px":undefined}} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select>{filterPillar!=="ALL"&&<button onClick={()=>setFilterPillar("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterDept!=="ALL"?"28px":undefined}} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>{filterDept!=="ALL"&&<button onClick={()=>setFilterDept("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterType!=="ALL"?"28px":undefined}} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select>{filterType!=="ALL"&&<button onClick={()=>setFilterType("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterParent!=="ALL"?"28px":undefined}} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>{filterParent!=="ALL"&&<button onClick={()=>setFilterParent("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
             </div>
             {loading?<div style={{...S.card,textAlign:"center",padding:48,color:"#aaa"}}><Spinner/>Chargement…</div>
@@ -1093,7 +1093,7 @@ export default function App() {
             :(
               <div style={{...S.card,padding:0,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>{["Pilier","Département","Processus","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["Pilier","Département","Processus","Statut","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
                       const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
@@ -1101,20 +1101,22 @@ export default function App() {
                       const sws=t.Softwares?t.Softwares.split(",").map(s=>s.trim()).filter(Boolean):[];
                       const fname=t.DocURL?decodeURIComponent(t.DocURL.split("/").pop().split("?")[0]):"";
                       return <tr key={t.TaskID}
-                        style={{cursor:"default"}}
+                        style={{cursor:"pointer"}}
+                        onClick={()=>setTaskModal(t)}
                         onMouseEnter={e=>{setHoveredTask(t);setHoverPos({x:e.clientX,y:e.clientY});}}
                         onMouseLeave={()=>setHoveredTask(null)}
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
                         <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
+                        <td style={S.td}>{t.Validated?<span style={{background:"#e6f7ed",color:"#00A23A",border:"1px solid #00A23A40",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>✅ Validé</span>:<span style={{background:"#fff3e0",color:"#EB6011",border:"1px solid #EB601140",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⏳ En cours</span>}</td>
                         <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
                         <td style={S.td}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
                         <td style={S.td}><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{sws.length>0?sws.map(s=><span key={s} style={S.pill(BRAND.blue,"#e6eef8")}>{s}</span>):<span style={{color:"#ccc"}}>—</span>}</div></td>
                         <td style={S.td}><span style={S.pill("#8e44ad","#f5eef8")}>{t.Frequency}</span></td>
                         <td style={S.td}>{t.DocURL?<a href={t.DocURL} target="_blank" rel="noreferrer" title={fname} style={{color:"#0078d4",fontWeight:600,fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>{t.DocURL.includes("sharepoint")?"☁️":"📎"} <span style={{maxWidth:80,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{fname||"Voir"}</span></a>:<span style={{color:"#ccc"}}>—</span>}</td>
                         <td style={S.td}>{deps.length>0?<div style={{display:"flex",flexWrap:"wrap",gap:3}}>{deps.map(did=>{const dd=departments.find(d=>d.id===did);return dd?<span key={did} style={S.pill(PILLARS[dd.pillar]?.color||"#999",PILLARS[dd.pillar]?.bg||"#f5f5f5")}>{dd.name}</span>:null;})}</div>:<span style={{color:"#ccc"}}>—</span>}</td>
-                        <td style={S.td}><button onClick={()=>setTaskModal(t)} style={{background:"#f0f0f8",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer",marginRight:4}}>✏️</button><button onClick={()=>deleteTask(t.TaskID)} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td>
+                        <td style={S.td}><button onClick={e=>{e.stopPropagation();setTaskModal(t);}} style={{background:"#f0f0f8",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer",marginRight:4}}>✏️</button><button onClick={e=>{e.stopPropagation();deleteTask(t.TaskID);}} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td>
                       </tr>;
                     })}
                   </tbody>
@@ -1218,6 +1220,8 @@ export default function App() {
                 <span style={{fontFamily:"BROTHER,sans-serif",fontSize:13,color:BRAND.blue,letterSpacing:1}}>{APP_VERSION}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
+                <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
+                <span title={"v3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
