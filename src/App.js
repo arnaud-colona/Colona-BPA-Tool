@@ -89,8 +89,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.10.2";
-const APP_BUILD = "11/03/2026 00:30";
+const APP_VERSION = "v3.11.0";
+const APP_BUILD = "11/03/2026 10:00";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -110,6 +110,8 @@ function getMermaidLiveUrl(code) {
 }
 async function apiFetch(p) { const r=await fetch(API_URL+"?"+new URLSearchParams(p).toString(),{redirect:"follow"}); return r.json(); }
 async function apiSaveTask(t) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveTask",task:t}),redirect:"follow"}); return r.json(); }
+async function apiSaveDept(d) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveDept",dept:d}),redirect:"follow"}); return r.json(); }
+async function apiDeleteDept(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteDept",deptId:id}),redirect:"follow"}); return r.json(); }
 async function apiDeleteTask(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteTask",taskId:id}),redirect:"follow"}); return r.json(); }
 async function apiAddSoftware(n) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"addSoftware",name:n}),redirect:"follow"}); return r.json(); }
 
@@ -918,11 +920,12 @@ export default function App() {
 
   useEffect(()=>{
     setLoading(true);
-    Promise.all([apiFetch({action:"getTasks"}),apiFetch({action:"getSoftwares"})])
-      .then(([td,sd])=>{
+    Promise.all([apiFetch({action:"getTasks"}),apiFetch({action:"getSoftwares"}),apiFetch({action:"getDepts"})])
+      .then(([td,sd,dd])=>{
         if(td.status==="ok") setTasks(td.tasks||[]);
-            if(sd.status==="ok") setSoftwares(prev => { const fromApi = sd.softwares||[]; const merged = [...DEFAULT_SOFTWARES]; fromApi.forEach(sw => { if(!merged.find(s=>s.id===sw.id)) merged.push(sw); }); return merged; });
-        setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s) et ${sd.softwares?.length||0} logiciel(s) chargés`}]);
+        if(sd.status==="ok") setSoftwares(prev => { const fromApi = sd.softwares||[]; const merged = [...DEFAULT_SOFTWARES]; fromApi.forEach(sw => { if(!merged.find(s=>s.id===sw.id)) merged.push(sw); }); return merged; });
+        if(dd.status==="ok"&&dd.depts&&dd.depts.length>0) setDepartments(dd.depts);
+        setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s), ${sd.softwares?.length||0} logiciel(s), ${dd.depts?.length||0} département(s) chargés`}]);
       })
       .catch(()=>showSync("error","❌ Impossible de contacter Google Sheets."))
       .finally(()=>setLoading(false));
@@ -949,13 +952,15 @@ export default function App() {
     try{await apiDeleteTask(id);setTasks(p=>p.filter(t=>t.TaskID!==id));showSync("ok","✅ Supprimée.");}
     catch{showSync("error","❌ Erreur.");}
   };
-  const saveDept=(d)=>{
-    const exists=departments.find(x=>x.id===d.id);
-    if(exists) setDepartments(p=>p.map(x=>x.id===d.id?d:x));
-    else setDepartments(p=>[...p,{...d,id:d.id||deptUid(d.name)}]);
-    setDeptModal(null);showSync("ok",`✅ Département "${d.name}" enregistré`);
+  const saveDept=async(d)=>{
+    const finalDept={...d,id:d.id||deptUid(d.name)};
+    const exists=departments.find(x=>x.id===finalDept.id);
+    if(exists) setDepartments(p=>p.map(x=>x.id===finalDept.id?finalDept:x));
+    else setDepartments(p=>[...p,finalDept]);
+    setDeptModal(null);showSync("ok",`✅ Département "${finalDept.name}" enregistré`);
+    try{ await apiSaveDept(finalDept); } catch(e){ showSync("error","⚠️ Sauvegarde locale OK, sync Sheets échouée"); }
   };
-  const deleteDept=(id)=>{if(!window.confirm("Supprimer ?")) return;setDepartments(p=>p.filter(d=>d.id!==id));showSync("ok","✅ Supprimé");};
+  const deleteDept=async(id)=>{if(!window.confirm("Supprimer ?")) return;setDepartments(p=>p.filter(d=>d.id!==id));showSync("ok","✅ Supprimé");try{await apiDeleteDept(id);}catch(e){}};
   const importFromOdoo=async()=>{
     if(!odooUrl.trim()) return;setOdooLoading(true);
     try{const r=await fetch(odooUrl.trim());const d=await r.json();if(Array.isArray(d)&&d.length>0){setDepartments(d.map(x=>({id:x.id||deptUid(x.name||""),name:x.name||"",manager:x.manager_id?.[1]||x.manager||"",headcount:x.member_count||x.headcount||0,pillar:x.x_pillar||x.pillar||"E2O"})));showSync("ok",`✅ ${d.length} départements importés !`);}else showSync("error","❌ Format inattendu");}
@@ -1244,7 +1249,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
