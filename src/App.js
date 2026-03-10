@@ -87,10 +87,10 @@ const DEFAULT_TASK_TYPES = [
   { id:"TT04", name:"Projet",       color:"#9b59b6", icon:"🚀" },
 ];
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
-const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
+const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.9.1";
-const APP_BUILD = "10/03/2026 23:00";
+const APP_VERSION = "v3.10.0";
+const APP_BUILD = "10/03/2026 23:45";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -437,9 +437,9 @@ function TaskModal({ editTask, departments, services, softwares, onSoftwareAdded
                 </select>
               </div>
               <div><label style={LB}>🔀 Service</label>
-                <select style={IS} value={form.ServiceID||""} onChange={e=>setForm(f=>({...f,ServiceID:e.target.value}))}>
+                <select style={IS} value={form.ServiceName||""} onChange={e=>setForm(f=>({...f,ServiceName:e.target.value}))}>
                   <option value="">— Tous / Aucun —</option>
-                  {services.filter(s=>!form.DeptID||s.deptId===form.DeptID).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+                  {services.filter(s=>!form.DeptID||s.deptId===form.DeptID).map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
               <div><label style={LB}>📝 Nom de le processus *</label><input style={IS} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
@@ -967,7 +967,7 @@ export default function App() {
   const filteredTasks=useMemo(()=>tasks.filter(t=>
     (filterPillar==="ALL"||departments.find(d=>d.id===t.DeptID)?.pillar===filterPillar)&&
     (filterDept==="ALL"||t.DeptID===filterDept)&&
-    (filterService==="ALL"||t.ServiceID===filterService)&&
+    (filterService==="ALL"||t.ServiceName===filterService)&&
     (filterType==="ALL"||t.TaskType===filterType)&&
     (filterParent==="ALL"||t.ParentID===filterParent)
   ),[tasks,departments,services,filterPillar,filterDept,filterType,filterParent,filterService]);
@@ -1106,7 +1106,7 @@ export default function App() {
               </div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterPillar!=="ALL"?"28px":undefined}} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select>{filterPillar!=="ALL"&&<button onClick={()=>setFilterPillar("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterDept!=="ALL"?"28px":undefined}} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>{filterDept!=="ALL"&&<button onClick={()=>setFilterDept("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
-              <div style={{flex:1,minWidth:110}}><label style={S.label}>Service</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterService!=="ALL"?"28px":undefined}} value={filterService} onChange={e=>setFilterService(e.target.value)}><option value="ALL">Tous</option>{services.filter(s=>filterDept==="ALL"||s.deptId===filterDept).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>{filterService!=="ALL"&&<button onClick={()=>setFilterService("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Service</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterService!=="ALL"?"28px":undefined}} value={filterService} onChange={e=>setFilterService(e.target.value)}><option value="ALL">Tous</option>{services.filter(s=>filterDept==="ALL"||s.deptId===filterDept).map(s=><option key={s.id} value={s.name}>{s.name}</option>)}</select>{filterService!=="ALL"&&<button onClick={()=>setFilterService("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterType!=="ALL"?"28px":undefined}} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select>{filterType!=="ALL"&&<button onClick={()=>setFilterType("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterParent!=="ALL"?"28px":undefined}} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>{filterParent!=="ALL"&&<button onClick={()=>setFilterParent("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               {(filterPillar!=="ALL"||filterDept!=="ALL"||filterService!=="ALL"||filterType!=="ALL"||filterParent!=="ALL")&&(<div style={{display:"flex",alignItems:"flex-end"}}><button onClick={()=>{setFilterPillar("ALL");setFilterDept("ALL");setFilterService("ALL");setFilterType("ALL");setFilterParent("ALL");}} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 18px",background:"#fdecea",border:"2px solid #D51317",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,color:"#D51317",height:42,whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(213,19,23,0.2)"}}>✕ Tout effacer</button></div>)}<div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
@@ -1131,11 +1131,11 @@ export default function App() {
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}>{dept?<Badge pillar={dept.pillar}/>:<span title="Département manquant — cliquez pour corriger" style={{fontSize:14}}>⚠️</span>}</td>
                         <td style={S.td}>{dept?<strong>{dept.name}</strong>:<span style={{color:"#e67e22",fontSize:12,fontWeight:700,fontStyle:"italic"}}>⚠️ À réassigner</span>}</td>
-                        <td style={S.td}>{(()=>{const svc=services.find(s=>s.id===t.ServiceID);return svc?<span style={{background:"#f0f4ff",color:"#005CA9",border:"1px solid #005CA920",borderRadius:8,padding:"2px 8px",fontSize:11,fontWeight:600}}>{svc.name}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})()}</td>
-                        <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
+                        <td style={S.td}>{t.ServiceName?<span style={{background:"#f0f4ff",color:"#005CA9",border:"1px solid #005CA920",borderRadius:8,padding:"2px 8px",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>{t.ServiceName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>}</td>
+                        <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&(()=>{const preview=t.Notes.split("\n").map(l=>l.trim()).find(l=>l.length>0)||"";return preview?<div style={{fontSize:11,color:"#888",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:320}}>{preview}</div>:null;})()}</td>
                         <td style={S.td}>{t.Validated?<span style={{background:"#e6f7ed",color:"#00A23A",border:"1px solid #00A23A40",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>✅ Validé</span>:<span style={{background:"#fff3e0",color:"#EB6011",border:"1px solid #EB601140",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⏳ En cours</span>}</td>
                         <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
-                        <td style={S.td}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
+                        <td style={{...S.td,whiteSpace:"nowrap"}}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
                         <td style={S.td}><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{sws.length>0?sws.map(s=><span key={s} style={S.pill(BRAND.blue,"#e6eef8")}>{s}</span>):<span style={{color:"#ccc"}}>—</span>}</div></td>
                         <td style={S.td}><span style={S.pill("#8e44ad","#f5eef8")}>{t.Frequency}</span></td>
                         <td style={S.td}>{t.DocURL?<a href={t.DocURL} target="_blank" rel="noreferrer" title={fname} style={{color:"#0078d4",fontWeight:600,fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>{t.DocURL.includes("sharepoint")?"☁️":"📎"} <span style={{maxWidth:80,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{fname||"Voir"}</span></a>:<span style={{color:"#ccc"}}>—</span>}</td>
@@ -1245,7 +1245,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
