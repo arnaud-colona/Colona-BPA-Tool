@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef, createPortal } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 // ── Tooltip Portal — renders at document.body to escape any overflow/transform ──
 function TooltipPortal({ children }) {
@@ -65,8 +66,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Description:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v2.7.0";
-const APP_BUILD = "10/03/2026 14:43";
+const APP_VERSION = "v2.8.0";
+const APP_BUILD = "10/03/2026 14:47";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
