@@ -64,10 +64,10 @@ const DEFAULT_TASK_TYPES = [
   { id:"TT04", name:"Projet",       color:"#9b59b6", icon:"🚀" },
 ];
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
-const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Description:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
+const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v2.9.0";
-const APP_BUILD = "10/03/2026 14:51";
+const APP_VERSION = "v3.0.0";
+const APP_BUILD = "10/03/2026 15:20";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -354,81 +354,212 @@ function ParentTaskSelector({ value, onChange, parentProcesses, currentTaskId })
 }
 
 // ── Task Modal (replaces Saisie tab) ─────────────────────────────────────────
-function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, parentProcesses, onAddProcess, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
-  const [form, setForm] = useState(editTask ? {...editTask} : {...TASK_TEMPLATE});
-  const S={
-    overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"},
-    drawer:{background:"#fff",borderRadius:"20px 20px 0 0",padding:"0 0 24px",width:"100%",maxWidth:900,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.2)"},
-    label:{fontSize:12,fontWeight:700,color:"#555",marginBottom:4,display:"block",textTransform:"uppercase",letterSpacing:0.5},
-    input:{width:"100%",padding:"9px 12px",border:"1.5px solid #ddd",borderRadius:7,fontSize:14,boxSizing:"border-box",background:"#fafafa",fontFamily:"Roboto,sans-serif"},
-    select:{width:"100%",padding:"9px 12px",border:"1.5px solid #ddd",borderRadius:7,fontSize:14,boxSizing:"border-box",background:"#fafafa",fontFamily:"Roboto,sans-serif"},
+function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, parentProcesses, onAddProcess, employees, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
+  const isNew = !editTask;
+  const DESC_TEMPLATE = "Objectif du process :\n\nDéclencheur :\n\nÉtapes principales :\n\nOutput visé :";
+  const [form, setForm] = useState(() => {
+    if (editTask) return {...editTask};
+    return {...TASK_TEMPLATE, Notes: DESC_TEMPLATE, CreatedAt: new Date().toISOString().split("T")[0]};
+  });
+  const [modalTab, setModalTab] = useState("general");
+  const parseJ = (v, def=[]) => { try { return JSON.parse(v||JSON.stringify(def)); } catch { return def; } };
+  const dataUsed = parseJ(form.DataUsed, []);
+  const clientsInt = parseJ(form.ClientsInt, []);
+  const clientsExt = parseJ(form.ClientsExt, []);
+  const setJ = (field, val) => setForm(f => ({...f, [field]: JSON.stringify(val)}));
+  const handleSave = () => {
+    const now = new Date().toISOString().split("T")[0];
+    const updated = { ...form, UpdatedAt: now, Version: String(parseInt(form.Version||"1") + (isNew?0:1)), CreatedAt: form.CreatedAt||now, ValidatedAt: form.Validated&&!form.ValidatedAt?now:form.ValidatedAt };
+    onSave(updated);
   };
+  const IL = { width:"100%", padding:"9px 12px", border:"1.5px solid #ddd", borderRadius:7, fontSize:13, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" };
+  const LB = { fontSize:11, fontWeight:700, color:"#555", display:"block", marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 };
+  const IS = { width:"100%", padding:"9px 12px", border:"1.5px solid #ddd", borderRadius:7, fontSize:13, boxSizing:"border-box", background:"#fafafa", fontFamily:"Roboto,sans-serif" };
+  const statusBadge = form.Validated
+    ? { label:"✅ Validé", bg:"#e8f5e9", color:"#2e7d32", border:"#a5d6a7" }
+    : { label:"📝 Brouillon", bg:"#fff8e1", color:"#f57f17", border:"#ffe082" };
+  const MODAL_TABS = [["general","📋 Général"],["analyse","🔍 Analyse"],["actors","👥 Acteurs"],["status","✅ Statut"]];
+
   return (
-    <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={S.drawer}>
-        {/* Handle bar */}
-        <div style={{padding:"12px 0 0",display:"flex",justifyContent:"center"}}><div style={{width:48,height:5,borderRadius:3,background:"#ddd"}}/></div>
-        {/* Header */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 28px 16px",borderBottom:"2px solid rgba(213,19,23,0.1)"}}>
-          <div style={{fontFamily:"BROTHER,sans-serif",color:"#D51317",fontSize:16,letterSpacing:1}}>{editTask?"✏️ MODIFIER LA TÂCHE":"➕ ENCODER UNE NOUVELLE TÂCHE"}</div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <img src={IMG_EGGY} alt="" style={{height:60,objectFit:"contain"}}/>
-            <button onClick={onClose} style={{background:"#f0f0f0",border:"none",borderRadius:50,width:34,height:34,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+      <div style={{width:"100%",maxWidth:860,maxHeight:"92vh",background:"#fff",borderRadius:"18px 18px 0 0",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        <div style={{background:`linear-gradient(135deg,${BRAND.red},#b01015)`,padding:"16px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"BROTHER,sans-serif",color:"#fff",fontSize:16,letterSpacing:1}}>{isNew?"NOUVELLE TÂCHE":"MODIFIER LA TÂCHE"}</div>
+            {!isNew&&<div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2}}>v{form.Version} · modifié le {form.UpdatedAt||"—"}</div>}
           </div>
+          <span style={{background:statusBadge.bg,color:statusBadge.color,border:`1px solid ${statusBadge.border}`,borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700}}>{statusBadge.label}</span>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:32,height:32,color:"#fff",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
-        {/* Form */}
-        <div style={{padding:"20px 28px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            <div><label style={S.label}>🏢 Département *</label>
-              <select style={S.select} value={form.DeptID} onChange={e=>setForm(f=>({...f,DeptID:e.target.value}))}>
-                <option value="">— Choisir —</option>
-                {Object.entries(PILLARS).map(([pk,pv])=>(
-                  <optgroup key={pk} label={`${pv.icon} ${pv.label}`}>
-                    {departments.filter(d=>d.pillar===pk).map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div><label style={S.label}>📝 Nom de la tâche *</label><input style={S.input} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
-            <div style={{gridColumn:"1 / -1"}}><label style={S.label}>🏷️ Type de tâche</label><TaskTypeSelector value={form.TaskType} onChange={v=>setForm(f=>({...f,TaskType:v}))} taskTypes={taskTypes}/></div>
-            <div style={{gridColumn:"1 / -1"}}>
-              <label style={S.label}>🔗 Processus parent (optionnel — regroupe les tâches d'un même processus)</label>
-              <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const pname=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name:pname});setForm(f=>({...f,ParentID:newId}));}else{setForm(f=>({...f,ParentID:v}));}}} parentProcesses={parentProcesses} currentTaskId={editTask?.TaskID||""}/>
-            </div>
-            <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💻 Logiciels (multi-sélection)</label><SoftwareMultiSelector value={form.Softwares} onChange={v=>setForm(f=>({...f,Softwares:v}))} softwares={softwares} onSoftwareAdded={onSoftwareAdded} showSync={showSync}/></div>
-            <div><label style={S.label}>📅 Fréquence</label>
-              <select style={S.select} value={form.Frequency} onChange={e=>setForm(f=>({...f,Frequency:e.target.value}))}>
-                {FREQUENCIES.map(fr=><option key={fr}>{fr}</option>)}
-              </select>
-            </div>
-            <div><label style={S.label}>📎 Document SharePoint</label><SharePointPicker value={form.DocURL||""} onChange={v=>setForm(f=>({...f,DocURL:v}))} msalConfig={msalConfig} msToken={msToken} onToken={onToken}/></div>
-            <div style={{gridColumn:"1 / -1"}}><label style={S.label}>🔗 Dépendances</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:"10px 12px",border:"1.5px solid #ddd",borderRadius:7,background:"#fafafa",minHeight:44}}>
-                {departments.filter(d=>d.id!==form.DeptID).map(d=>{
-                  const cur=form.Deps?form.Deps.split(",").map(s=>s.trim()).filter(Boolean):[];
-                  const active=cur.includes(d.id);
-                  return <button key={d.id} onClick={()=>{const deps=form.Deps?form.Deps.split(",").map(s=>s.trim()).filter(Boolean):[];setForm(f=>({...f,Deps:(active?deps.filter(x=>x!==d.id):[...deps,d.id]).join(",")}));}} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${active?PILLARS[d.pillar]?.color||"#ccc":"#ccc"}`,background:active?PILLARS[d.pillar]?.color||"#ccc":"#fff",color:active?"#fff":"#555",fontSize:12,cursor:"pointer"}}>{d.name}</button>;
-                })}
-              </div>
-              {form.Deps&&<div style={{fontSize:12,color:BRAND.green,marginTop:6}}>✓ {form.Deps.split(",").filter(Boolean).length} dépendance(s)</div>}
-            </div>
-            <div style={{gridColumn:"1 / -1"}}>
-              <label style={S.label}>💬 Description</label>
-              <textarea
-                placeholder="Description détaillée, volume, contraintes, particularités…"
-                value={form.Notes||""}
-                onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}
-                rows={2}
-                style={{...S.input, resize:"vertical", minHeight:64, lineHeight:1.6, fontFamily:"Roboto,sans-serif", display:"block"}}
-              />
-            </div>
-          </div>
-          {form.DeptID&&(()=>{const d=departments.find(x=>x.id===form.DeptID);if(!d)return null;const p=PILLARS[d.pillar];return <div style={{marginTop:14,padding:"10px 14px",background:p.bg,borderRadius:8,fontSize:13,borderLeft:`4px solid ${p.color}`}}>{p.icon} <strong>{d.name}</strong> · <strong style={{color:p.color}}>{p.label}</strong> · {d.manager}</div>;})()}
-          <div style={{marginTop:20,display:"flex",gap:10}}>
-            <button style={{background:!form.DeptID||!form.TaskName||saving?"#ccc":BRAND.red,color:"#fff",border:"none",borderRadius:7,padding:"12px 24px",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"Roboto,sans-serif"}} onClick={()=>onSave(form)} disabled={!form.DeptID||!form.TaskName||saving}>
-              {saving?<><Spinner/>Sauvegarde…</>:editTask?"💾 Enregistrer":"➕ Ajouter la tâche"}
+        <div style={{display:"flex",borderBottom:"2px solid #f0f0f0",flexShrink:0,background:"#fafafa"}}>
+          {MODAL_TABS.map(([k,l])=>(
+            <button key={k} onClick={()=>setModalTab(k)}
+              style={{padding:"11px 22px",border:"none",borderBottom:`3px solid ${modalTab===k?BRAND.red:"transparent"}`,background:"none",fontWeight:modalTab===k?700:400,color:modalTab===k?BRAND.red:"#666",cursor:"pointer",fontSize:13,whiteSpace:"nowrap"}}>
+              {l}
             </button>
-            <button style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"12px 20px",cursor:"pointer",fontWeight:600,fontSize:14}} onClick={onClose}>Annuler</button>
+          ))}
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+
+          {modalTab==="general"&&(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+              <div><label style={LB}>🏢 Département *</label>
+                <select style={IS} value={form.DeptID} onChange={e=>setForm(f=>({...f,DeptID:e.target.value}))}>
+                  <option value="">— Choisir —</option>
+                  {Object.entries(PILLARS).map(([pk,pv])=>(
+                    <optgroup key={pk} label={`${pv.icon} ${pv.label}`}>
+                      {departments.filter(d=>d.pillar===pk).map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div><label style={LB}>📝 Nom de la tâche *</label><input style={IS} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🏷️ Type de tâche</label><TaskTypeSelector value={form.TaskType} onChange={v=>setForm(f=>({...f,TaskType:v}))} taskTypes={taskTypes}/></div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🔗 Processus parent</label>
+                <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const pname=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name:pname});setForm(f=>({...f,ParentID:newId}));}else setForm(f=>({...f,ParentID:v}));}} parentProcesses={parentProcesses} currentTaskId={editTask?.TaskID||""}/>
+              </div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🛠️ Outils digitaux</label><SoftwareMultiSelector value={form.Softwares} onChange={v=>setForm(f=>({...f,Softwares:v}))} softwares={softwares} onSoftwareAdded={onSoftwareAdded} showSync={showSync}/></div>
+              <div><label style={LB}>📅 Fréquence</label>
+                <select style={IS} value={form.Frequency} onChange={e=>setForm(f=>({...f,Frequency:e.target.value}))}>
+                  {FREQUENCIES.map(fr=><option key={fr}>{fr}</option>)}
+                </select>
+              </div>
+              <div><label style={LB}>💻 Niveau de digitalisation</label>
+                <select style={IS} value={form.DigitalLevel||""} onChange={e=>setForm(f=>({...f,DigitalLevel:e.target.value}))}>
+                  <option value="">— Non défini —</option>
+                  {["Manuel","Excel / Fichier","App annexe","ERP","Automatisé"].map(l=><option key={l}>{l}</option>)}
+                </select>
+              </div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>📎 Document SharePoint</label><SharePointPicker value={form.DocURL||""} onChange={v=>setForm(f=>({...f,DocURL:v}))} msalConfig={msalConfig} msToken={msToken} onToken={onToken}/></div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🔗 Dépendances inter-départements</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:"10px 12px",border:"1.5px solid #ddd",borderRadius:7,background:"#fafafa",minHeight:44}}>
+                  {departments.filter(d=>d.id!==form.DeptID).map(d=>{
+                    const cur=(form.Deps||"").split(",").map(s=>s.trim()).filter(Boolean);
+                    const active=cur.includes(d.id);
+                    return <button key={d.id} onClick={()=>{const deps=(form.Deps||"").split(",").map(s=>s.trim()).filter(Boolean);setForm(f=>({...f,Deps:(active?deps.filter(x=>x!==d.id):[...deps,d.id]).join(",")}));}} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${active?PILLARS[d.pillar]?.color||"#ccc":"#ccc"}`,background:active?PILLARS[d.pillar]?.color||"#ccc":"#fff",color:active?"#fff":"#555",fontSize:12,cursor:"pointer"}}>{d.name}</button>;
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {modalTab==="analyse"&&(
+            <div style={{display:"grid",gap:18}}>
+              <div><label style={LB}>💬 Description du processus</label>
+                <textarea value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))} rows={8}
+                  style={{...IL,resize:"vertical",minHeight:180,lineHeight:1.7,display:"block"}}
+                  placeholder={"Objectif du process :\n\nDéclencheur :\n\nÉtapes principales :\n\nOutput visé :"}/>
+              </div>
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <label style={{...LB,margin:0}}>📊 Données utilisées</label>
+                  <button onClick={()=>setJ("DataUsed",[...dataUsed,{data:"",source:"",issue:""}])}
+                    style={{background:BRAND.green,color:"#fff",border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Ligne</button>
+                </div>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead><tr>{["Donnée","Source","Problème éventuel",""].map(h=><th key={h} style={{background:"#f5f5f5",padding:"8px 10px",textAlign:"left",border:"1px solid #e0e0e0",fontWeight:700,fontSize:11}}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {dataUsed.length===0&&<tr><td colSpan={4} style={{padding:"16px",textAlign:"center",color:"#aaa",fontSize:12}}>Aucune donnée — cliquez "+ Ligne"</td></tr>}
+                    {dataUsed.map((row,i)=>(
+                      <tr key={i}>
+                        {["data","source","issue"].map(col=>(
+                          <td key={col} style={{border:"1px solid #e0e0e0",padding:0}}>
+                            <input value={row[col]||""} onChange={e=>{const d=[...dataUsed];d[i]={...d[i],[col]:e.target.value};setJ("DataUsed",d);}}
+                              style={{width:"100%",border:"none",padding:"7px 10px",fontSize:12,background:"transparent",fontFamily:"Roboto,sans-serif",boxSizing:"border-box"}}
+                              placeholder={col==="data"?"Nom…":col==="source"?"Système…":"Problème…"}/>
+                          </td>
+                        ))}
+                        <td style={{border:"1px solid #e0e0e0",padding:"0 6px",textAlign:"center"}}>
+                          <button onClick={()=>setJ("DataUsed",dataUsed.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",color:"#e74c3c",fontSize:14}}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div><label style={LB}>⚡ Irritants</label>
+                <textarea value={form.Irritants||""} onChange={e=>setForm(f=>({...f,Irritants:e.target.value}))} rows={3}
+                  style={{...IL,resize:"vertical",minHeight:80,lineHeight:1.6,display:"block"}}
+                  placeholder="Quels sont les principaux problèmes rencontrés dans ce processus ?"/>
+              </div>
+              <div><label style={LB}>🚀 Opportunités</label>
+                <textarea value={form.Opportunities||""} onChange={e=>setForm(f=>({...f,Opportunities:e.target.value}))} rows={3}
+                  style={{...IL,resize:"vertical",minHeight:80,lineHeight:1.6,display:"block"}}
+                  placeholder="Quelles améliorations ou automatisations sont possibles ?"/>
+              </div>
+            </div>
+          )}
+
+          {modalTab==="actors"&&(
+            <div style={{display:"grid",gap:18}}>
+              <div><label style={LB}>👤 Responsable du processus</label>
+                <select style={IS} value={form.Responsable||""} onChange={e=>setForm(f=>({...f,Responsable:e.target.value}))}>
+                  <option value="">— Non assigné —</option>
+                  {employees.map((e,i)=><option key={i} value={e.name}>{e.name}{e.dept?" ("+departments.find(d=>d.id===e.dept)?.name+")":""}</option>)}
+                </select>
+                {employees.length===0&&<div style={{fontSize:11,color:"#e67e22",marginTop:5}}>⚠️ Ajoutez des employés dans ⚙️ Paramètres → 👤 Employés</div>}
+              </div>
+              <div><label style={LB}>🤝 Clients du processus</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,border:"1.5px solid #ddd",borderRadius:8,overflow:"hidden"}}>
+                  {[["ClientsInt",clientsInt,"🏢 Clients internes","Département, équipe…"],["ClientsExt",clientsExt,"🌍 Clients externes","Fournisseur, client final…"]].map(([field,list,title,ph],fi)=>(
+                    <div key={field} style={{borderRight:fi===0?"1px solid #e0e0e0":"none"}}>
+                      <div style={{background:"#f8f8f8",padding:"9px 12px",fontWeight:700,fontSize:12,borderBottom:"1px solid #e0e0e0"}}>{title}</div>
+                      <div style={{padding:"10px"}}>
+                        {list.map((item,i)=>(
+                          <div key={i} style={{display:"flex",gap:6,marginBottom:6}}>
+                            <input value={item} onChange={e=>{const a=[...list];a[i]=e.target.value;setJ(field,a);}}
+                              style={{flex:1,border:"1px solid #e8e8e8",borderRadius:5,padding:"6px 9px",fontSize:12,fontFamily:"Roboto,sans-serif"}} placeholder={ph}/>
+                            <button onClick={()=>setJ(field,list.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#e74c3c",cursor:"pointer",fontSize:13}}>✕</button>
+                          </div>
+                        ))}
+                        <button onClick={()=>setJ(field,[...list,""])}
+                          style={{background:"none",border:"1.5px dashed #ccc",borderRadius:6,padding:"6px",fontSize:12,color:"#888",cursor:"pointer",width:"100%",marginTop:2}}>+ Ajouter</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div><label style={LB}>🧑‍🤝‍🧑 Dépendance humaine</label>
+                <textarea value={form.HumanDeps||""} onChange={e=>setForm(f=>({...f,HumanDeps:e.target.value}))} rows={3}
+                  style={{...IL,resize:"vertical",minHeight:80,lineHeight:1.6,display:"block"}}
+                  placeholder="Sur quelles personnes clés ce processus repose-t-il ?"/>
+              </div>
+            </div>
+          )}
+
+          {modalTab==="status"&&(
+            <div style={{display:"grid",gap:16}}>
+              <div style={{...(form.Validated?{background:"#e8f5e9",border:"2px solid #a5d6a7"}:{background:"#fff8e1",border:"2px solid #ffe082"}),borderRadius:12,padding:"18px 20px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+                  <input type="checkbox" id="validated-cb" checked={!!form.Validated}
+                    onChange={e=>{const now=new Date().toISOString().split("T")[0];setForm(f=>({...f,Validated:e.target.checked,ValidatedAt:e.target.checked?now:""}));}}
+                    style={{width:22,height:22,cursor:"pointer",accentColor:"#2e7d32"}}/>
+                  <label htmlFor="validated-cb" style={{fontSize:15,fontWeight:700,cursor:"pointer",color:form.Validated?"#2e7d32":"#f57f17"}}>
+                    {form.Validated?"✅ Processus validé":"📝 En cours de rédaction (Brouillon)"}
+                  </label>
+                  {form.Validated&&form.ValidatedAt&&<span style={{fontSize:12,color:"#666",marginLeft:"auto"}}>Validé le {form.ValidatedAt}</span>}
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+                {[["📅 Créé le",form.CreatedAt||"—"],["✏️ Modifié le",form.UpdatedAt||"—"],["🔢 Version","v"+form.Version]].map(([l,v])=>(
+                  <div key={l} style={{background:"#f8f8f8",borderRadius:8,padding:"12px 14px",border:"1px solid #eee"}}>
+                    <div style={{fontSize:11,color:"#888",marginBottom:4}}>{l}</div>
+                    <div style={{fontWeight:700,fontSize:14,color:"#333"}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{padding:"14px 24px",borderTop:"2px solid #f0f0f0",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,background:"#fafafa"}}>
+          <div style={{fontSize:12,color:"#aaa"}}>{!isNew&&`ID: ${form.TaskID} · v${form.Version}`}</div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={onClose} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"10px 20px",cursor:"pointer",fontWeight:600,fontSize:13}}>Annuler</button>
+            <button onClick={handleSave} disabled={saving||!form.DeptID||!form.TaskName}
+              style={{background:saving||!form.DeptID||!form.TaskName?"#ccc":BRAND.red,color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:8}}>
+              {saving?<><span>⏳</span> Sauvegarde…</>:<><span>💾</span> Sauvegarder</>}
+            </button>
           </div>
         </div>
       </div>
@@ -436,9 +567,7 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
   );
 }
 
-// ── Dept Modal ────────────────────────────────────────────────────────────────
-const LS={fontSize:12,fontWeight:700,color:"#555",marginBottom:4,display:"block",textTransform:"uppercase",letterSpacing:0.5};
-const IS={width:"100%",padding:"9px 12px",border:"1.5px solid #ddd",borderRadius:7,fontSize:14,boxSizing:"border-box",background:"#fafafa",fontFamily:"Roboto,sans-serif"};
+
 function DeptModal({ dept, onSave, onClose }) {
   const [form,setForm]=useState(dept||{...DEPT_TEMPLATE});
   return (
@@ -469,6 +598,35 @@ function FaviconSetter({ img }) {
     document.title = "Colona BPA";
   },[]);
   return null;
+}
+
+
+// ── Employee Add Card ────────────────────────────────────────────────────────
+function EmployeeAddCard({ onAdd, departments, S }) {
+  const [name, setName] = useState("");
+  const [dept, setDept] = useState("");
+  return (
+    <div style={{...S.card, borderLeft:`4px solid #005CA9`, marginBottom:0}}>
+      <h4 style={{margin:"0 0 12px", fontFamily:"BROTHER,sans-serif", fontSize:12, color:"#004a8a", letterSpacing:1}}>AJOUTER UN EMPLOYÉ</h4>
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:10, alignItems:"end"}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:"#666",display:"block",marginBottom:3}}>NOM COMPLET *</label>
+          <input style={S.input} placeholder="Ex: DUPONT Marie" value={name} onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"&&name.trim()){onAdd({name:name.trim(),dept});setName("");setDept("");}}}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:"#666",display:"block",marginBottom:3}}>DÉPARTEMENT</label>
+          <select style={S.select} value={dept} onChange={e=>setDept(e.target.value)}>
+            <option value="">— Optionnel —</option>
+            {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </div>
+        <button onClick={()=>{if(!name.trim())return;onAdd({name:name.trim(),dept});setName("");setDept("");}}
+          disabled={!name.trim()}
+          style={{...S.btn(!name.trim()?"#ccc":"#005CA9"), whiteSpace:"nowrap"}}>➕ Ajouter</button>
+      </div>
+    </div>
+  );
 }
 
 
@@ -508,7 +666,7 @@ function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
         <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"3px 9px", fontSize:11, fontWeight:600 }}>📅 {task.Frequency}</span>
       </div>
       {parent && <div style={{ fontSize:12, color:"#EB6011", marginBottom:6, padding:"4px 8px", background:"#fff3eb", borderRadius:6 }}>🔗 Parent : <strong>{parent.TaskName}</strong></div>}
-      {sws.length > 0 && <div style={{ fontSize:12, color:"#005CA9", marginBottom:6 }}>💻 {sws.join(" · ")}</div>}
+      {sws.length > 0 && <div style={{ fontSize:12, color:"#005CA9", marginBottom:6 }}>🛠️ {sws.join(" · ")}</div>}
       {deps.length > 0 && <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>🔗 Dépend de : {deps.map(d=>departments.find(x=>x.id===d)?.name||d).join(", ")}</div>}
       {task.Notes && <div style={{ fontSize:11, color:"#888", marginBottom:6, borderTop:"1px solid #f5f5f5", paddingTop:6 }}>📝 {task.Notes}</div>}
       {task.DocURL && <a href={task.DocURL} style={{ fontSize:11, color:"#0078d4", display:"block" }}>📎 Document lié</a>}
@@ -592,7 +750,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
             {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
             <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:600 }}>📅 {task.Frequency}</span>
           </div>
-          {sws.length > 0 && <div style={{ fontSize:11, color:"#005CA9", marginBottom:5 }}>💻 {sws.join(" · ")}</div>}
+          {sws.length > 0 && <div style={{ fontSize:11, color:"#005CA9", marginBottom:5 }}>🛠️ {sws.join(" · ")}</div>}
           {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:5, borderTop:"1px solid #f0f0f0", paddingTop:5 }}>📝 {task.Notes}</div>}
           {task.DocURL && <div style={{ fontSize:11, color:"#0078d4" }}>📎 Document lié</div>}
           <div style={{ fontSize:10, color:"#bbb", marginTop:7, paddingTop:5, borderTop:"1px solid #f5f5f5", display:"flex", gap:10 }}>
@@ -668,6 +826,7 @@ export default function App() {
   const [filterType,setFilterType]=useState("ALL");
   const [filterParent,setFilterParent]=useState("ALL");
   const [parentProcesses,setParentProcesses]=useState([]);
+  const [employees,setEmployees]=useState([]);
   const [hoveredTask,setHoveredTask]=useState(null);
   const [hoverPos,setHoverPos]=useState({x:0,y:0});
   const [mermaidMode,setMermaidMode]=useState("global");
@@ -870,7 +1029,7 @@ export default function App() {
             :(
               <div style={{...S.card,padding:0,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>{["Pilier","Département","Tâche","Parent","Type","Logiciels","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["Pilier","Département","Tâche","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
                       const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
@@ -987,7 +1146,7 @@ export default function App() {
         {tab==="settings"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-              {[["departments","🏢 Départements"],["softwares","💻 Logiciels"],["types","🏷️ Types de tâches"],["processes","🔗 Processus parents"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
+              {[["departments","🏢 Départements"],["softwares","🛠️ Outils digitaux"],["types","🏷️ Types de tâches"],["processes","🔗 Processus parents"],["employees","👤 Employés"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setSettingsTab(k)} style={{padding:"8px 18px",borderRadius:8,border:`2px solid ${settingsTab===k?BRAND.blue:"#ddd"}`,background:settingsTab===k?"rgba(0,92,169,0.08)":"rgba(255,255,255,0.8)",fontWeight:settingsTab===k?700:400,cursor:"pointer",fontSize:13,color:settingsTab===k?BRAND.blue:"#555"}}>{l}</button>
               ))}
               <div style={{flex:1}}/>
@@ -1085,6 +1244,37 @@ export default function App() {
               </div>
             )}
 
+            {settingsTab==="employees"&&(
+              <div>
+                <div style={{...S.card,borderLeft:`4px solid ${BRAND.blue}`,background:"rgba(0,92,169,0.03)"}}>
+                  <h3 style={{...S.title,margin:"0 0 6px",color:BRAND.blue,fontSize:15}}>👤 LISTE DES EMPLOYÉS</h3>
+                  <p style={{margin:0,fontSize:13,color:"#666"}}>Ces employés seront disponibles comme "Responsable" dans chaque fiche de tâche.</p>
+                </div>
+                <div style={{...S.card,padding:0,overflow:"hidden"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",borderBottom:"2px solid rgba(0,92,169,0.15)"}}>
+                    <h3 style={{...S.title,margin:0,color:BRAND.blue,fontSize:13}}>{employees.length} EMPLOYÉS</h3>
+                  </div>
+                  {employees.length===0?(
+                    <div style={{padding:"32px",textAlign:"center",color:"#aaa",fontSize:13}}>Aucun employé — ajoutez-en ci-dessous.</div>
+                  ):(
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead><tr>{["Nom","Département","Actions"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {employees.map((e,i)=>(
+                          <tr key={i}>
+                            <td style={S.td}><strong>👤 {e.name}</strong></td>
+                            <td style={S.td}>{e.dept?departments.find(d=>d.id===e.dept)?.name||e.dept:"—"}</td>
+                            <td style={S.td}><button onClick={()=>setEmployees(prev=>prev.filter((_,j)=>j!==i))} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <EmployeeAddCard onAdd={emp=>setEmployees(prev=>[...prev,emp])} departments={departments} S={S}/>
+              </div>
+            )}
+
             {settingsTab==="sharepoint"&&(
               <div>
                 <div style={{...S.card,borderLeft:"4px solid #0078d4",background:"rgba(0,120,212,0.03)"}}>
@@ -1128,7 +1318,7 @@ export default function App() {
       <div style={{height:8,background:BRAND.red}}/>
 
       {/* ── Modals ── */}
-      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} parentProcesses={parentProcesses} onAddProcess={p=>setParentProcesses(prev=>[...prev,typeof p==="string"?{id:"PP"+Date.now(),name:p}:p])} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
+      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} parentProcesses={parentProcesses} onAddProcess={p=>setParentProcesses(prev=>[...prev,typeof p==="string"?{id:"PP"+Date.now(),name:p}:p])} employees={employees} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
       {deptModal&&<DeptModal dept={deptModal==="new"?null:deptModal} onSave={saveDept} onClose={()=>setDeptModal(null)}/>}
     </div>
   );
