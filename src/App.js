@@ -384,7 +384,7 @@ export default function App() {
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
     @font-face {
       font-family: 'BROTHER';
-      src: url('data:font/truetype;base64,${font_b64}') format('truetype');
+      src: url('data:font/truetype;base64,' + BROTHER_FONT + ') format('truetype');
       font-weight: bold;
       font-style: normal;
     }
