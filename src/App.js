@@ -50,8 +50,10 @@ const DEFAULT_TASK_TYPES = [
   { id:"TT04", name:"Projet",       color:"#9b59b6", icon:"🚀" },
 ];
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
-const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
+const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Description:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
+const APP_VERSION = "v2.4.0";
+const APP_BUILD = "10/03/2026 14:05";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -396,7 +398,16 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
               </div>
               {form.Deps&&<div style={{fontSize:12,color:BRAND.green,marginTop:6}}>✓ {form.Deps.split(",").filter(Boolean).length} dépendance(s)</div>}
             </div>
-            <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💬 Notes</label><input style={S.input} placeholder="Volume, contraintes…" value={form.Notes} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
+            <div style={{gridColumn:"1 / -1"}}>
+              <label style={S.label}>💬 Description</label>
+              <textarea
+                placeholder="Description détaillée, volume, contraintes, particularités…"
+                value={form.Notes||""}
+                onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}
+                rows={2}
+                style={{...S.input, resize:"vertical", minHeight:64, lineHeight:1.6, fontFamily:"Roboto,sans-serif", display:"block"}}
+              />
+            </div>
           </div>
           {form.DeptID&&(()=>{const d=departments.find(x=>x.id===form.DeptID);if(!d)return null;const p=PILLARS[d.pillar];return <div style={{marginTop:14,padding:"10px 14px",background:p.bg,borderRadius:8,fontSize:13,borderLeft:`4px solid ${p.color}`}}>{p.icon} <strong>{d.name}</strong> · <strong style={{color:p.color}}>{p.label}</strong> · {d.manager}</div>;})()}
           <div style={{marginTop:20,display:"flex",gap:10}}>
@@ -482,7 +493,7 @@ function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
       {parent && <div style={{ fontSize:12, color:"#EB6011", marginBottom:6, padding:"4px 8px", background:"#fff3eb", borderRadius:6 }}>🔗 Parent : <strong>{parent.TaskName}</strong></div>}
       {sws.length > 0 && <div style={{ fontSize:12, color:"#005CA9", marginBottom:6 }}>💻 {sws.join(" · ")}</div>}
       {deps.length > 0 && <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>🔗 Dépend de : {deps.map(d=>departments.find(x=>x.id===d)?.name||d).join(", ")}</div>}
-      {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:6, borderTop:"1px solid #f5f5f5", paddingTop:6 }}>"{task.Notes}"</div>}
+      {task.Notes && <div style={{ fontSize:11, color:"#888", marginBottom:6, borderTop:"1px solid #f5f5f5", paddingTop:6 }}>📝 {task.Notes}</div>}
       {task.DocURL && <a href={task.DocURL} style={{ fontSize:11, color:"#0078d4", display:"block" }}>📎 Document lié</a>}
     </div>
   );
@@ -496,7 +507,10 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
   const [form, setForm] = useState({...task});
   const [saving, setSaving] = useState(false);
   const [mousePos, setMousePos] = useState({x:0, y:0});
-  const cardRef = useRef(null);
+
+  // Sync form when task prop changes
+  useEffect(() => { setForm({...task}); }, [task.TaskID]);
+
   const dept = departments.find(d => d.id === task.DeptID);
   const tt = taskTypes.find(t => t.id === task.TaskType);
   const sws = (task.Softwares||"").split(",").map(s=>s.trim()).filter(Boolean);
@@ -504,58 +518,89 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await apiSaveTask({...form, Version: String(parseInt(form.Version||"1")+1)});
-      onEdit({...form});
+      const updated = {...form, Version: String(parseInt(form.Version||"1")+1)};
+      await apiSaveTask(updated);
+      onEdit(updated);
       setEditing(false);
     } catch { alert("Erreur de sauvegarde"); }
     setSaving(false);
   };
 
-  const IL = { width:"100%", padding:"6px 9px", border:"1.5px solid #ddd", borderRadius:6, fontSize:12, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" };
-  const LB = { fontSize:10, fontWeight:700, color:"#888", display:"block", marginBottom:2, textTransform:"uppercase", letterSpacing:0.5 };
+  const IL = { width:"100%", padding:"7px 10px", border:"1.5px solid #ddd", borderRadius:6, fontSize:12, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" };
+  const LB = { fontSize:10, fontWeight:700, color:"#666", display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:0.5 };
+
+  // Smart tooltip position: flip above mouse when near bottom
+  const tipLeft = Math.min(mousePos.x + 16, window.innerWidth - 340);
+  const tipTop = mousePos.y > window.innerHeight * 0.55
+    ? Math.max(10, mousePos.y - 240)
+    : mousePos.y + 16;
 
   return (
     <div style={{ position:"relative" }}
       onMouseEnter={() => !editing && setHover(true)}
-      onMouseLeave={() => !editing && setHover(false)}
+      onMouseLeave={() => { if(!editing) setHover(false); }}
       onMouseMove={e => setMousePos({x: e.clientX, y: e.clientY})}>
 
       {/* Task pill */}
-      <div style={{ fontSize:11, padding:"3px 7px", background:"rgba(255,255,255,0.85)", borderRadius:5, marginBottom:3, display:"flex", alignItems:"center", gap:5, cursor:"pointer", border:"1px solid transparent", transition:"border-color 0.15s" }}
-        onMouseEnter={e => e.currentTarget.style.borderColor="#ddd"}
-        onMouseLeave={e => e.currentTarget.style.borderColor="transparent"}>
-        {tt && <span style={{ color:tt.color, fontSize:12 }}>{tt.icon}</span>}
-        <span onClick={() => onNavigate(task.TaskID)} style={{ fontWeight:600, color:"#333", cursor:"pointer", textDecoration:"none", flex:1 }}
+      <div style={{ fontSize:11, padding:"4px 8px", background:"rgba(255,255,255,0.85)", borderRadius:6, marginBottom:3, display:"flex", alignItems:"center", gap:6, border:"1px solid transparent", transition:"all 0.12s" }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor="#e0e0e0"; e.currentTarget.style.background="#fff"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor="transparent"; e.currentTarget.style.background="rgba(255,255,255,0.85)"; }}>
+        {tt && <span style={{ color:tt.color, fontSize:12, flexShrink:0 }}>{tt.icon}</span>}
+        <span
+          onClick={() => onNavigate(task.TaskID)}
+          style={{ fontWeight:600, color:"#2c2c3e", cursor:"pointer", flex:1, lineHeight:1.3 }}
           title="Cliquer pour voir dans Tâches">
           ▸ {task.TaskName}
         </span>
-        <button onClick={e => { e.stopPropagation(); setEditing(true); setForm({...task}); setHover(false); }}
-          style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#bbb", padding:"0 2px", lineHeight:1 }}
-          title="Modifier">✏️</button>
+        <button
+          onClick={e => { e.stopPropagation(); setForm({...task}); setEditing(true); setHover(false); }}
+          style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#bbb", padding:"0 2px", flexShrink:0, lineHeight:1 }}
+          title="Modifier cette tâche">✏️</button>
       </div>
 
-      {/* Hover tooltip - fixed position to stay above footer */}
+      {/* Hover preview tooltip — fixed, always above footer */}
       {hover && !editing && (
-        <div style={{ position:"fixed", left: Math.min(mousePos.x + 16, window.innerWidth - 340), top: mousePos.y > window.innerHeight * 0.6 ? mousePos.y - 220 : mousePos.y + 16, zIndex:9999, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.2)", pointerEvents:"none" }}>
-          <div style={{ fontWeight:700, fontSize:13, color:"#1a1a2e", marginBottom:6 }}>{task.TaskName}</div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
-            {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
-            <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:600 }}>{task.Frequency}</span>
+        <div style={{
+          position:"fixed", left:tipLeft, top:tipTop, zIndex:9999,
+          background:"#fff", border:"1.5px solid #EB6011", borderRadius:12,
+          padding:"14px 16px", width:300, maxWidth:"90vw",
+          boxShadow:"0 12px 32px rgba(0,0,0,0.18)", pointerEvents:"none"
+        }}>
+          <div style={{ fontWeight:700, fontSize:13, color:"#1a1a2e", marginBottom:8, lineHeight:1.3 }}>{task.TaskName}</div>
+          {dept && <div style={{ fontSize:11, color:"#888", marginBottom:6 }}>🏢 {dept.name}</div>}
+          <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:7 }}>
+            {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
+            <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"2px 8px", fontSize:10, fontWeight:600 }}>📅 {task.Frequency}</span>
           </div>
-          {sws.length > 0 && <div style={{ fontSize:11, color:"#555", marginBottom:4 }}>💻 {sws.join(" · ")}</div>}
-          {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:4 }}>"{task.Notes}"</div>}
+          {sws.length > 0 && <div style={{ fontSize:11, color:"#005CA9", marginBottom:5 }}>💻 {sws.join(" · ")}</div>}
+          {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:5, borderTop:"1px solid #f0f0f0", paddingTop:5 }}>📝 {task.Notes}</div>}
           {task.DocURL && <div style={{ fontSize:11, color:"#0078d4" }}>📎 Document lié</div>}
-          <div style={{ fontSize:10, color:"#ccc", marginTop:6, borderTop:"1px solid #f0f0f0", paddingTop:5 }}>Clic sur le nom → voir dans Tâches · ✏️ → modifier</div>
+          <div style={{ fontSize:10, color:"#bbb", marginTop:7, paddingTop:5, borderTop:"1px solid #f5f5f5", display:"flex", gap:10 }}>
+            <span>🖊 ✏️ pour modifier</span>
+            <span>🔗 clic nom → Tâches</span>
+          </div>
         </div>
       )}
 
-      {/* Inline edit drawer */}
+      {/* Inline edit panel — fixed position */}
       {editing && (
-        <div style={{ position:"absolute", left:0, top:"100%", zIndex:900, background:"#fff", border:"1.5px solid #D51317", borderRadius:10, padding:"14px", minWidth:300, maxWidth:360, boxShadow:"0 12px 36px rgba(0,0,0,0.18)" }}>
-          <div style={{ fontWeight:700, fontSize:12, color:"#D51317", marginBottom:10, fontFamily:"BROTHER,sans-serif" }}>✏️ MODIFIER</div>
-          <div style={{ display:"grid", gap:8 }}>
+        <div style={{
+          position:"fixed",
+          left: Math.min(mousePos.x - 160, window.innerWidth - 370),
+          top: mousePos.y > window.innerHeight * 0.55 ? Math.max(10, mousePos.y - 320) : mousePos.y - 20,
+          zIndex:9999, background:"#fff", border:"2px solid #D51317", borderRadius:12,
+          padding:"16px", width:360, maxWidth:"94vw",
+          boxShadow:"0 16px 48px rgba(213,19,23,0.18)"
+        }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontFamily:"BROTHER,sans-serif", color:"#D51317", fontSize:13, letterSpacing:1 }}>✏️ MODIFIER</div>
+            <button onClick={() => setEditing(false)} style={{ background:"#f5f5f5", border:"none", borderRadius:50, width:26, height:26, cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+          </div>
+          <div style={{ display:"grid", gap:9 }}>
             <div><label style={LB}>Nom de la tâche</label><input style={IL} value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
-            <div><label style={LB}>Notes</label><input style={IL} placeholder="Notes…" value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
+            <div><label style={LB}>Description</label>
+              <textarea rows={2} style={{...IL, resize:"vertical", minHeight:52, lineHeight:1.5}} placeholder="Description…" value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}></textarea>
+            </div>
             <div><label style={LB}>Fréquence</label>
               <select style={IL} value={form.Frequency} onChange={e=>setForm(f=>({...f,Frequency:e.target.value}))}>
                 {["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"].map(fr=><option key={fr}>{fr}</option>)}
@@ -564,14 +609,15 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
             <div><label style={LB}>Type</label>
               <select style={IL} value={form.TaskType||""} onChange={e=>setForm(f=>({...f,TaskType:e.target.value}))}>
                 <option value="">— Aucun —</option>
-                {taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}
+                {taskTypes.map(t=><option key={t.id} value={t.id}>{t.icon} {t.name}</option>)}
               </select>
             </div>
           </div>
-          <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"flex-end" }}>
-            <button onClick={()=>setEditing(false)} style={{ background:"#f0f0f0", border:"none", borderRadius:6, padding:"7px 12px", cursor:"pointer", fontSize:12 }}>Annuler</button>
-            <button onClick={handleSave} disabled={saving} style={{ background:saving?"#ccc":"#D51317", color:"#fff", border:"none", borderRadius:6, padding:"7px 14px", cursor:"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", gap:5 }}>
-              {saving ? "…" : <><span style={{fontSize:14}}>💾</span> Sauvegarder</>}
+          <div style={{ display:"flex", gap:8, marginTop:14, justifyContent:"flex-end" }}>
+            <button onClick={() => setEditing(false)} style={{ background:"#f0f0f0", border:"none", borderRadius:7, padding:"8px 14px", cursor:"pointer", fontSize:12, fontWeight:600 }}>Annuler</button>
+            <button onClick={handleSave} disabled={saving}
+              style={{ background:saving?"#ccc":"#D51317", color:"#fff", border:"none", borderRadius:7, padding:"8px 16px", cursor:saving?"default":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", gap:6 }}>
+              {saving ? "…" : <><span style={{fontSize:15}}>💾</span> Sauvegarder</>}
             </button>
           </div>
         </div>
@@ -815,7 +861,7 @@ export default function App() {
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
-                        <td style={S.td}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#aaa"}}>{t.Notes}</div>}</td>
+                        <td style={S.td}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
                         <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
                         <td style={S.td}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
                         <td style={S.td}><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{sws.length>0?sws.map(s=><span key={s} style={S.pill(BRAND.blue,"#e6eef8")}>{s}</span>):<span style={{color:"#ccc"}}>—</span>}</div></td>
@@ -921,6 +967,12 @@ export default function App() {
               {[["departments","🏢 Départements"],["softwares","💻 Logiciels"],["types","🏷️ Types de tâches"],["processes","🔗 Processus parents"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setSettingsTab(k)} style={{padding:"8px 18px",borderRadius:8,border:`2px solid ${settingsTab===k?BRAND.blue:"#ddd"}`,background:settingsTab===k?"rgba(0,92,169,0.08)":"rgba(255,255,255,0.8)",fontWeight:settingsTab===k?700:400,cursor:"pointer",fontSize:13,color:settingsTab===k?BRAND.blue:"#555"}}>{l}</button>
               ))}
+              <div style={{flex:1}}/>
+              <div style={{padding:"6px 14px",background:"rgba(0,92,169,0.07)",borderRadius:8,border:"1px solid rgba(0,92,169,0.15)",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontFamily:"BROTHER,sans-serif",fontSize:13,color:BRAND.blue,letterSpacing:1}}>{APP_VERSION}</span>
+                <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
+                <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
+              </div>
             </div>
 
             {settingsTab==="departments"&&(
