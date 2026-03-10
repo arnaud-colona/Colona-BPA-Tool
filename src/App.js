@@ -482,8 +482,8 @@ function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
   const deps = (task.Deps||"").split(",").map(s=>s.trim()).filter(Boolean);
   const TIP_H = 300;
   const left = Math.min(pos.x + 16, window.innerWidth - 380);
-  const spaceBelow = window.innerHeight - pos.y;
-  const top = spaceBelow < TIP_H + 20 ? Math.max(10, pos.y - TIP_H - 10) : pos.y + 16;
+  const rawTop = pos.y + 20;
+  const top = Math.min(rawTop, window.innerHeight - TIP_H - 10);
   return (
     <div style={{ position:"fixed", left, top, zIndex:9999, background:"#fff", border:"1.5px solid #D51317", borderRadius:12, padding:"16px 18px", width:340, boxShadow:"0 12px 36px rgba(0,0,0,0.18)", pointerEvents:"none" }}>
       <div style={{ fontWeight:700, fontSize:15, color:"#1a1a2e", marginBottom:8 }}>{task.TaskName}</div>
@@ -531,14 +531,12 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
   const IL = { width:"100%", padding:"7px 10px", border:"1.5px solid #ddd", borderRadius:6, fontSize:12, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" };
   const LB = { fontSize:10, fontWeight:700, color:"#666", display:"block", marginBottom:3, textTransform:"uppercase", letterSpacing:0.5 };
 
-  // Smart tooltip: always show fully visible, flip above cursor if not enough space below
-  const TIP_H = 260; // estimated tooltip height
+  // Always fully visible: prefer below cursor, clamp so it never exits viewport
+  const TIP_H = 260;
   const TIP_W = 310;
   const tipLeft = Math.min(mousePos.x + 16, window.innerWidth - TIP_W - 10);
-  const spaceBelow = window.innerHeight - mousePos.y;
-  const tipTop = spaceBelow < TIP_H + 20
-    ? Math.max(10, mousePos.y - TIP_H - 10)
-    : mousePos.y + 16;
+  const rawTop = mousePos.y + 20;
+  const tipTop = Math.min(rawTop, window.innerHeight - TIP_H - 10);
 
   return (
     <div style={{ position:"relative" }}
@@ -592,7 +590,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
         <div style={{
           position:"fixed",
           left: Math.min(mousePos.x - 160, window.innerWidth - 375),
-          top: (window.innerHeight - mousePos.y) < 340 ? Math.max(10, mousePos.y - 340) : mousePos.y - 20,
+          top: Math.min(mousePos.y - 20, window.innerHeight - 360),
           zIndex:9999, background:"#fff", border:"2px solid #D51317", borderRadius:12,
           padding:"16px", width:360, maxWidth:"94vw",
           boxShadow:"0 16px 48px rgba(213,19,23,0.18)"
