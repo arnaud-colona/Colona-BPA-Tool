@@ -30,6 +30,16 @@ const PILLARS = {
   O2C:{ label:"Order-to-Cash",    short:"O2C", color:"#00A23A", bg:"#e6f7ed", icon:"📦", desc:"De la commande client à l\'encaissement" },
   E2O:{ label:"Enable-to-Operate",short:"E2O", color:"#005CA9", bg:"#e6eef8", icon:"⚙️", desc:"Fonctions support & infrastructure transversale" },
 };
+const DEFAULT_SOFTWARES = [
+  {id:"S001",name:"Odoo"},{id:"S002",name:"Hardware"},{id:"S003",name:"3CX"},
+  {id:"S004",name:"Réseau"},{id:"S005",name:"EDI"},{id:"S006",name:"Sharepoint/Teams"},
+  {id:"S007",name:"Application Colona"},{id:"S008",name:"Excel"},
+  {id:"S009",name:"Digitalisation globale"},{id:"S010",name:"Power BI"},
+  {id:"S011",name:"Divers"},{id:"S012",name:"Cybersécurité"},
+  {id:"S013",name:"Power Automate"},{id:"S014",name:"NIS2"},{id:"S015",name:"IA"}
+];
+
+
 const DEFAULT_DEPARTMENTS = [
   { id:"achats",      name:"Achats",          manager:"DEWINGAERDEN Gauthier", headcount:1,  pillar:"P2S" },
   { id:"commercial",  name:"Commercial",       manager:"COLON Maxime",          headcount:6,  pillar:"O2C" },
@@ -66,8 +76,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.1.0";
-const APP_BUILD = "10/03/2026 15:34";
+const APP_VERSION = "v3.2.0";
+const APP_BUILD = "10/03/2026 16:11";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -86,9 +96,9 @@ function getMermaidLiveUrl(code) {
   catch { return "https://mermaid.live"; }
 }
 async function apiFetch(p) { const r=await fetch(API_URL+"?"+new URLSearchParams(p).toString(),{redirect:"follow"}); return r.json(); }
-async function apiSaveTask(t) { const r=await fetch(API_URL+"?action=saveTask&task="+encodeURIComponent(JSON.stringify(t)),{redirect:"follow"}); return r.json(); }
+async function apiSaveTask(t) { const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveTask",task:t}),redirect:"follow"}); return r.json(); }
 async function apiDeleteTask(id) { const r=await fetch(API_URL+"?action=deleteTask&taskId="+encodeURIComponent(id),{redirect:"follow"}); return r.json(); }
-async function apiAddSoftware(n) { const r=await fetch(API_URL+"?action=addSoftware&name="+encodeURIComponent(n),{redirect:"follow"}); return r.json(); }
+async function apiAddSoftware(n) { const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addSoftware",name:n}),redirect:"follow"}); return r.json(); }
 
 function generateMermaid(tasks,depts) {
   if(!tasks.length) return "flowchart LR\n  A[Aucun processus encodée]";
@@ -381,7 +391,7 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
   const MODAL_TABS = [["general","📋 Général"],["analyse","🔍 Analyse"],["actors","👥 Acteurs"],["status","✅ Statut"]];
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
       <div style={{width:"100%",maxWidth:860,maxHeight:"90vh",background:"#fff",borderRadius:16,display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
         <div style={{background:`linear-gradient(135deg,${BRAND.red},#b01015)`,padding:"16px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
           <div style={{flex:1}}>
@@ -601,6 +611,45 @@ function FaviconSetter({ img }) {
 }
 
 
+// ── Odoo Employees Import ────────────────────────────────────────────────────
+function OdooEmployeesImport({ onImport, showSync, S }) {
+  const [apiUrl, setApiUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const doImport = async () => {
+    if (!apiUrl.trim()) return;
+    setLoading(true);
+    try {
+      const r = await fetch(apiUrl.trim());
+      const d = await r.json();
+      if (Array.isArray(d)) {
+        onImport(d.map(e => ({ name: e.name||e.display_name||String(e.id), dept: e.department_id?.[1]||"" })));
+        showSync("✅ " + d.length + " employés importés depuis Odoo !");
+      } else {
+        showSync("❌ Format inattendu — attendu un tableau JSON");
+      }
+    } catch(e) { showSync("❌ Erreur: " + e.message); }
+    setLoading(false);
+  };
+  return (
+    <div style={{...S.card, borderLeft:"4px solid #EB6011", background:"rgba(235,96,17,0.03)"}}>
+      <h4 style={{...S.title, margin:"0 0 8px", fontSize:12, color:"#b05010"}}>🔄 IMPORT DEPUIS ODOO (API)</h4>
+      <p style={{margin:"0 0 10px", fontSize:12, color:"#666"}}>Synchronise automatiquement les employés depuis ton instance Odoo.</p>
+      <div style={{display:"flex", gap:10, alignItems:"center"}}>
+        <input style={{...S.input, flex:1}} value={apiUrl} onChange={e=>setApiUrl(e.target.value)}
+          placeholder="https://mon-odoo.com/api/hr.employee?fields=name,department_id"/>
+        <button onClick={doImport} disabled={loading||!apiUrl.trim()}
+          style={{...S.btn(!apiUrl.trim()?"#ccc":"#EB6011"), whiteSpace:"nowrap"}}>
+          {loading?"⏳ Import…":"⬇️ Importer"}
+        </button>
+      </div>
+      <div style={{fontSize:11, color:"#888", marginTop:6}}>
+        💡 Format attendu : <code style={{background:"#f0f0f0",padding:"2px 5px",borderRadius:3}}>{"[{name, department_id}]"}</code> — compatible endpoint Odoo JSON-RPC
+      </div>
+    </div>
+  );
+}
+
+
 // ── Employee Add Card ────────────────────────────────────────────────────────
 function EmployeeAddCard({ onAdd, departments, S }) {
   const [name, setName] = useState("");
@@ -813,7 +862,7 @@ export default function App() {
   const [tab,setTab]=useState("overview");
   const [settingsTab,setSettingsTab]=useState("departments");
   const [tasks,setTasks]=useState([]);
-  const [softwares,setSoftwares]=useState([]);
+  const [softwares,setSoftwares]=useState(DEFAULT_SOFTWARES);
   const [departments,setDepartments]=useState(DEFAULT_DEPARTMENTS);
   const [taskTypes,setTaskTypes]=useState(DEFAULT_TASK_TYPES);
   const [loading,setLoading]=useState(true);
@@ -831,6 +880,9 @@ export default function App() {
   const [hoverPos,setHoverPos]=useState({x:0,y:0});
   const [mermaidMode,setMermaidMode]=useState("global");
   const [msalConfig,setMsalConfig]=useState({clientId:"",tenantId:""});
+  const [msalConfigAudric,setMsalConfigAudric]=useState({clientId:"",tenantId:""});
+  const [currentUser,setCurrentUser]=useState("arnaud");
+  const activeMsalConfig = currentUser==="arnaud" ? msalConfig : msalConfigAudric;
   const [msToken,setMsToken]=useState(null);
   const [newTypeName,setNewTypeName]=useState("");
   const [newTypeIcon,setNewTypeIcon]=useState("📌");
@@ -844,7 +896,7 @@ export default function App() {
     Promise.all([apiFetch({action:"getTasks"}),apiFetch({action:"getSoftwares"})])
       .then(([td,sd])=>{
         if(td.status==="ok") setTasks(td.tasks||[]);
-        if(sd.status==="ok") setSoftwares(sd.softwares||[]);
+            if(sd.status==="ok") setSoftwares(prev => { const fromApi = sd.softwares||[]; const merged = [...DEFAULT_SOFTWARES]; fromApi.forEach(sw => { if(!merged.find(s=>s.id===sw.id)) merged.push(sw); }); return merged; });
         setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s) et ${sd.softwares?.length||0} logiciel(s) chargés`}]);
       })
       .catch(()=>showSync("error","❌ Impossible de contacter Google Sheets."))
@@ -947,9 +999,21 @@ export default function App() {
           <div style={{display:"flex",alignItems:"flex-end",gap:10,paddingBottom:0}}>
             <img src={IMG_PIMENT} alt="" style={{height:62,objectFit:"contain",animation:"float 3s ease-in-out infinite",filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.3))"}}/>
             <img src={IMG_FRITE} alt="" style={{height:70,objectFit:"contain",animation:"float 3.5s ease-in-out infinite 0.5s",filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.3))"}}/>
-            <div style={{textAlign:"right",paddingBottom:10}}>
-              <div style={{...S.title,color:"#FDCA00",fontSize:20}}>{loading?<><Spinner/>Chargement…</>:`${tasks.length} TÂCHE${tasks.length!==1?"S":""}`}</div>
-              <div style={{color:"rgba(255,255,255,0.5)",fontSize:11,marginTop:2}}>{loading?"Connexion…":"✅ Sync Google Sheets"}</div>
+           <div style={{textAlign:"right",paddingBottom:10,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+              <div style={{...S.title,color:"#FDCA00",fontSize:20}}>{loading?<><Spinner/> Chargement…</>:tasks.length+" PROCESSUS"}</div>
+              <div style={{color:"rgba(255,255,255,0.5)",fontSize:11}}>{loading?"Connexion…":"✅ Sync Google Sheets"}</div>
+              <div style={{display:"flex",alignItems:"center",gap:3,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 4px"}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.6)",paddingLeft:6}}>👤</span>
+                {["arnaud","audric"].map(u=>(
+                  <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);}}
+                    style={{padding:"3px 10px",borderRadius:16,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,
+                      background:currentUser===u?"#fff":"transparent",
+                      color:currentUser===u?BRAND.red:"rgba(255,255,255,0.7)",
+                      textTransform:"capitalize",transition:"all 0.15s"}}>
+                    {u.charAt(0).toUpperCase()+u.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -960,7 +1024,7 @@ export default function App() {
 
       {/* ── TABS — sans "Saisie" ── */}
       <div style={S.tabs}>
-        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Processus"],["taxonomy","🗺️ Cartographie"],["mermaid","🧠 Mindmap"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
+        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Processus"],["taxonomy","🏛️ 3 Piliers"],["mermaid","🧠 Mindmap"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
           <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -1061,10 +1125,10 @@ export default function App() {
         )}
 
 
-        {/* ══ CARTOGRAPHIE ══ */}
+        {/* ══ 3 PILIERS ══ */}
         {tab==="taxonomy"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>🗺️ CARTOGRAPHIE — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
+            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>🗺️ 🏛️ 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
             {Object.entries(PILLARS).map(([pk,pv])=>{
               const depts=deptsByPillar(pk);
               const ptasks=tasks.filter(t=>depts.find(d=>d.id===t.DeptID));
@@ -1279,47 +1343,41 @@ export default function App() {
               <div>
                 <div style={{...S.card,borderLeft:"4px solid #0078d4",background:"rgba(0,120,212,0.03)"}}>
                   <h3 style={{...S.title,margin:"0 0 8px",color:"#0078d4",fontSize:15}}>☁️ INTÉGRATION SHAREPOINT / MICROSOFT</h3>
-                  <p style={{margin:"0 0 16px",fontSize:13,color:"#666"}}>Configure ton app Azure AD pour permettre la connexion avec les comptes Microsoft Colona et parcourir SharePoint directement.</p>
-                  <div style={{display:"grid",gap:14}}>
-                    <div>
-                      <label style={S.label}>Azure Client ID (Application ID)</label>
-                      <input style={{...S.input,border:"1.5px solid #0078d4"}} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={msalConfig.clientId} onChange={e=>setMsalConfig(c=>({...c,clientId:e.target.value}))}/>
-                    </div>
-                    <div>
-                      <label style={S.label}>Tenant ID (optionnel — laisser vide pour "common")</label>
-                      <input style={S.input} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ou ton-domaine.onmicrosoft.com" value={msalConfig.tenantId} onChange={e=>setMsalConfig(c=>({...c,tenantId:e.target.value}))}/>
-                    </div>
-                    {msToken&&<div style={{padding:"10px 14px",background:"#e8f4fd",borderRadius:8,fontSize:13,color:"#0078d4",fontWeight:600}}>✅ Connecté à Microsoft</div>}
-                  </div>
-                  <div style={{marginTop:16,padding:"12px 16px",background:"rgba(0,120,212,0.07)",borderRadius:8,fontSize:12,color:"#0050a0"}}>
-                    <strong>📋 Comment obtenir ton Client ID :</strong><br/>
-                    1. Va sur <strong>portal.azure.com</strong> → Azure Active Directory → Inscriptions d\'applications<br/>
-                    2. Nouvelle inscription → Nom: "Colona BPA Tool" → Comptes: "Monolocataire" (Colona seulement)<br/>
-                    3. URI de redirection → Web → <code style={{background:"rgba(0,0,0,0.08)",padding:"1px 5px",borderRadius:3}}>https://colona-bpa-tool.vercel.app</code><br/>
-                    4. Copie l\'<strong>Application (client) ID</strong> → colle-le ci-dessus<br/>
-                    5. Autorisations API → Ajouter → Microsoft Graph → <strong>Files.Read.All</strong> + <strong>Sites.Read.All</strong>
+                  <p style={{margin:"0 0 12px",fontSize:13,color:"#666"}}>Configure les apps Azure AD pour Arnaud et Audric. Le bon compte sera utilisé selon l'utilisateur actif en haut à droite.</p>
+                  <div style={{display:"flex",gap:8,marginBottom:16}}>
+                    {["arnaud","audric"].map(u=>(
+                      <div key={u} style={{flex:1,padding:"10px 14px",background:currentUser===u?"rgba(0,120,212,0.1)":"#f8f8f8",border:`2px solid ${currentUser===u?"#0078d4":"#e0e0e0"}`,borderRadius:8,cursor:"pointer",textAlign:"center",fontWeight:currentUser===u?700:400,fontSize:13}} onClick={()=>setCurrentUser(u)}>
+                        👤 {u.charAt(0).toUpperCase()+u.slice(1)} {currentUser===u&&"✓"}
+                      </div>
+                    ))}
                   </div>
                 </div>
+                {["arnaud","audric"].map(u=>{
+                  const cfg = u==="arnaud" ? msalConfig : msalConfigAudric;
+                  const setCfg = u==="arnaud" ? setMsalConfig : setMsalConfigAudric;
+                  const isActive = currentUser===u;
+                  return (
+                    <div key={u} style={{...S.card,borderLeft:`4px solid ${isActive?"#0078d4":"#ccc"}`,opacity:isActive?1:0.6}}>
+                      <h4 style={{...S.title,margin:"0 0 12px",fontSize:12,color:isActive?"#0078d4":"#999"}}>
+                        👤 {u.toUpperCase()} {isActive&&<span style={{background:"#0078d4",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,marginLeft:6}}>ACTIF</span>}
+                      </h4>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                        <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>CLIENT ID (Application ID)</label>
+                          <input style={S.input} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={cfg.clientId} onChange={e=>setCfg(c=>({...c,clientId:e.target.value}))}/>
+                        </div>
+                        <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>TENANT ID (optionnel)</label>
+                          <input style={S.input} placeholder="common ou xxxxxxxx-xxxx-xxxx-xxxx" value={cfg.tenantId||""} onChange={e=>setCfg(c=>({...c,tenantId:e.target.value}))}/>
+                        </div>
+                      </div>
+                      <div style={{fontSize:11,color:"#888",marginTop:8}}>Redirect URI à configurer dans Azure : <code style={{background:"#f0f0f0",padding:"2px 6px",borderRadius:4}}>https://colona-bpa-tool.vercel.app</code></div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         )}
-
-        {/* Footer */}
-        <div style={{textAlign:"center",padding:"16px 0 8px",display:"flex",justifyContent:"center",alignItems:"center",gap:20,opacity:0.35}}>
-          <img src={IMG_FLAMES} alt="" style={{height:36}}/>
-          <img src={IMG_LOGO} alt="Colona" style={{height:40,mixBlendMode:"multiply"}}/>
-          <img src={IMG_FLAMES} alt="" style={{height:36,transform:"scaleX(-1)"}}/>
-        </div>
       </div>
-
-
-
-      <div style={{height:8,background:BRAND.red}}/>
-
-      {/* ── Modals ── */}
-      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} parentProcesses={parentProcesses} onAddProcess={p=>setParentProcesses(prev=>[...prev,typeof p==="string"?{id:"PP"+Date.now(),name:p}:p])} employees={employees} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
-      {deptModal&&<DeptModal dept={deptModal==="new"?null:deptModal} onSave={saveDept} onClose={()=>setDeptModal(null)}/>}
     </div>
   );
 }
