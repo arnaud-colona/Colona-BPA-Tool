@@ -96,9 +96,9 @@ function getMermaidLiveUrl(code) {
   catch { return "https://mermaid.live"; }
 }
 async function apiFetch(p) { const r=await fetch(API_URL+"?"+new URLSearchParams(p).toString(),{redirect:"follow"}); return r.json(); }
-async function apiSaveTask(t) { const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"saveTask",task:t}),redirect:"follow"}); return r.json(); }
-async function apiDeleteTask(id) { const r=await fetch(API_URL+"?action=deleteTask&taskId="+encodeURIComponent(id),{redirect:"follow"}); return r.json(); }
-async function apiAddSoftware(n) { const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addSoftware",name:n}),redirect:"follow"}); return r.json(); }
+async function apiSaveTask(t) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveTask",task:t}),redirect:"follow"}); return r.json(); }
+async function apiDeleteTask(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteTask",taskId:id}),redirect:"follow"}); return r.json(); }
+async function apiAddSoftware(n) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"addSoftware",name:n}),redirect:"follow"}); return r.json(); }
 
 function generateMermaid(tasks,depts) {
   if(!tasks.length) return "flowchart LR\n  A[Aucun processus encodée]";
