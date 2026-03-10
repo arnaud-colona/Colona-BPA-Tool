@@ -248,7 +248,7 @@ function TaskTypeBadge({ typeId, taskTypes }) {
 }
 function Badge({ pillar }) {
   const p=PILLARS[pillar];if(!p)return null;
-  return <span style={{background:p.color,color:"#fff",borderRadius:4,padding:"2px 8px",fontSize:11,fontWeight:700}}>{p.icon} {p.short}</span>;
+  return <span style={{background:p.color,color:"#fff",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700,whiteSpace:"nowrap",display:"inline-flex",alignItems:"center",gap:3,minWidth:52,justifyContent:"center"}}>{p.icon} {p.short}</span>;
 }
 function Spinner() {
   return <span style={{display:"inline-block",width:16,height:16,border:"2px solid #D51317",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.7s linear infinite",verticalAlign:"middle",marginRight:8}}/>;
@@ -270,70 +270,65 @@ function MermaidBlock({ code }) {
 }
 
 
-// ── Parent Task Autocomplete ──────────────────────────────────────────────────
-function ParentTaskSelector({ value, onChange, tasks, currentTaskId }) {
+// ── Parent Process Selector (autocomplete + add new) ─────────────────────────
+function ParentTaskSelector({ value, onChange, parentProcesses, onAddProcess, currentTaskId }) {
   const [input, setInput] = useState("");
   const [open, setOpen] = useState(false);
 
-  const selectedTask = tasks.find(t => t.TaskID === value);
+  const selected = parentProcesses.find(p => p.id === value);
 
   useEffect(() => {
-    if (selectedTask) setInput(selectedTask.TaskName);
+    if (selected) setInput(selected.name);
     else setInput("");
   }, [value]);
 
   const filtered = input.length >= 1
-    ? tasks.filter(t =>
-        t.TaskID !== currentTaskId &&
-        t.TaskName.toLowerCase().includes(input.toLowerCase())
-      ).slice(0, 8)
-    : [];
+    ? parentProcesses.filter(p => p.id !== currentTaskId && p.name.toLowerCase().includes(input.toLowerCase())).slice(0, 8)
+    : parentProcesses.slice(0, 8);
 
   const clear = () => { onChange(""); setInput(""); setOpen(false); };
+  const showAdd = input.trim().length >= 2 && !parentProcesses.find(p => p.name.toLowerCase() === input.toLowerCase());
 
   return (
     <div style={{ position:"relative" }}>
-      {value && selectedTask ? (
+      {value && selected ? (
         <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", background:"#fff3eb", border:"1.5px solid #EB6011", borderRadius:7 }}>
-          <span style={{ fontSize:14 }}>🔗</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontWeight:700, fontSize:13, color:"#EB6011" }}>{selectedTask.TaskName}</div>
-            <div style={{ fontSize:11, color:"#aaa" }}>Tâche parent · ID: {selectedTask.TaskID}</div>
-          </div>
+          <span>🔗</span>
+          <div style={{ flex:1 }}><div style={{ fontWeight:700, fontSize:13, color:"#EB6011" }}>{selected.name}</div><div style={{ fontSize:11, color:"#aaa" }}>Processus parent</div></div>
           <button onClick={clear} style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:16 }}>✕</button>
         </div>
       ) : (
         <div>
-          <input
-            value={input}
+          <input value={input}
             onChange={e => { setInput(e.target.value); setOpen(true); onChange(""); }}
             onFocus={() => setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 200)}
-            placeholder="Rechercher une tâche parent… (laisser vide = tâche racine)"
+            onBlur={() => setTimeout(() => setOpen(false), 250)}
+            placeholder="Rechercher ou créer un processus parent…"
             style={{ width:"100%", padding:"9px 12px", border:"1.5px solid #ddd", borderRadius:7, fontSize:13, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" }}
           />
-          {open && filtered.length > 0 && (
-            <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#fff", border:"1.5px solid #EB6011", borderRadius:7, boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:500, maxHeight:240, overflowY:"auto", marginTop:3 }}>
-              {filtered.map(t => {
-                const dept = t.DeptID;
-                return (
-                  <div key={t.TaskID} onMouseDown={() => { onChange(t.TaskID); setInput(t.TaskName); setOpen(false); }}
-                    style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid #f5f5f5", display:"flex", alignItems:"center", gap:10 }}
-                    onMouseEnter={e => e.currentTarget.style.background="#fff3eb"}
-                    onMouseLeave={e => e.currentTarget.style.background="#fff"}>
-                    <span style={{ fontSize:14 }}>🔗</span>
-                    <div>
-                      <div style={{ fontWeight:600, fontSize:13 }}>{t.TaskName}</div>
-                      <div style={{ fontSize:11, color:"#aaa" }}>Dept: {dept} · {t.Frequency}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {open && input.length >= 1 && filtered.length === 0 && (
-            <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#fff", border:"1.5px solid #ddd", borderRadius:7, padding:"12px 14px", fontSize:12, color:"#aaa", zIndex:500, marginTop:3 }}>
-              Aucune tâche trouvée pour "{input}"
+          {open && (filtered.length > 0 || showAdd) && (
+            <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#fff", border:"1.5px solid #EB6011", borderRadius:7, boxShadow:"0 8px 24px rgba(0,0,0,0.14)", zIndex:9000, maxHeight:240, overflowY:"auto", marginTop:3 }}>
+              {filtered.map(p => (
+                <div key={p.id} onMouseDown={() => { onChange(p.id); setInput(p.name); setOpen(false); }}
+                  style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid #f5f5f5", display:"flex", alignItems:"center", gap:10 }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#fff3eb"}
+                  onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+                  <span>🔗</span>
+                  <div><div style={{ fontWeight:600, fontSize:13 }}>{p.name}</div><div style={{ fontSize:11, color:"#aaa" }}>{p.description||"Processus parent"}</div></div>
+                </div>
+              ))}
+              {showAdd && (
+                <div onMouseDown={() => { onAddProcess(input.trim()); onChange("__new__:"+input.trim()); setInput(input.trim()); setOpen(false); }}
+                  style={{ padding:"10px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, background:"#f0fff4", borderTop:"1px solid #e0e0e0" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#d4f0dc"}
+                  onMouseLeave={e=>e.currentTarget.style.background="#f0fff4"}>
+                  <span style={{ background:"#00A23A", color:"#fff", borderRadius:"50%", width:20, height:20, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700 }}>+</span>
+                  <div><div style={{ fontWeight:700, fontSize:12, color:"#00A23A" }}>Créer "{input.trim()}"</div><div style={{ fontSize:11, color:"#aaa" }}>Nouveau processus parent</div></div>
+                </div>
+              )}
+              {filtered.length === 0 && !showAdd && (
+                <div style={{ padding:"12px 14px", fontSize:12, color:"#aaa" }}>Tape 2 caractères pour créer un nouveau processus</div>
+              )}
             </div>
           )}
         </div>
@@ -343,7 +338,7 @@ function ParentTaskSelector({ value, onChange, tasks, currentTaskId }) {
 }
 
 // ── Task Modal (replaces Saisie tab) ─────────────────────────────────────────
-function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
+function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, parentProcesses, onAddProcess, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
   const [form, setForm] = useState(editTask ? {...editTask} : {...TASK_TEMPLATE});
   const S={
     overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"},
@@ -398,8 +393,8 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
               {form.Deps&&<div style={{fontSize:12,color:BRAND.green,marginTop:6}}>✓ {form.Deps.split(",").filter(Boolean).length} dépendance(s)</div>}
             </div>
             <div style={{gridColumn:"1 / -1"}}>
-              <label style={S.label}>🔗 Tâche parent (optionnel — pour regrouper dans un processus)</label>
-              <ParentTaskSelector value={form.ParentID||""} onChange={v=>setForm(f=>({...f,ParentID:v}))} tasks={tasks.filter(t=>t.TaskID!==(editTask?.TaskID||""))} currentTaskId={editTask?.TaskID||""}/>
+              <label style={S.label}>🔗 Processus parent (optionnel — regroupe les tâches d'un même processus)</label>
+              <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const name=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name});setForm(f=>({...f,ParentID:newId}));}else setForm(f=>({...f,ParentID:v}));}} parentProcesses={parentProcesses} onAddProcess={p=>onAddProcess(p)} currentTaskId={editTask?.TaskID||""}/>
             </div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💬 Notes</label><input style={S.input} placeholder="Volume, contraintes…" value={form.Notes} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
           </div>
@@ -452,12 +447,40 @@ function FaviconSetter({ img }) {
 }
 
 
+// ── Task Row Hover Tooltip (Tasks page - larger) ─────────────────────────────
+function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
+  const dept = departments.find(d => d.id === task.DeptID);
+  const tt = taskTypes.find(t => t.id === task.TaskType);
+  const sws = (task.Softwares||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const parent = parentTasks.find(p => p.TaskID === task.ParentID);
+  const deps = (task.Deps||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const left = Math.min(pos.x + 16, window.innerWidth - 380);
+  const top = Math.max(10, pos.y - 220);
+  return (
+    <div style={{ position:"fixed", left, top, zIndex:9999, background:"#fff", border:"1.5px solid #D51317", borderRadius:12, padding:"16px 18px", width:340, boxShadow:"0 12px 36px rgba(0,0,0,0.18)", pointerEvents:"none" }}>
+      <div style={{ fontWeight:700, fontSize:15, color:"#1a1a2e", marginBottom:8 }}>{task.TaskName}</div>
+      {dept && <div style={{ fontSize:12, color:"#666", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}><Badge pillar={dept.pillar}/><span>{dept.name}</span></div>}
+      <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:8 }}>
+        {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"3px 9px", fontSize:11, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
+        <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"3px 9px", fontSize:11, fontWeight:600 }}>📅 {task.Frequency}</span>
+      </div>
+      {parent && <div style={{ fontSize:12, color:"#EB6011", marginBottom:6, padding:"4px 8px", background:"#fff3eb", borderRadius:6 }}>🔗 Parent : <strong>{parent.TaskName}</strong></div>}
+      {sws.length > 0 && <div style={{ fontSize:12, color:"#005CA9", marginBottom:6 }}>💻 {sws.join(" · ")}</div>}
+      {deps.length > 0 && <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>🔗 Dépend de : {deps.map(d=>departments.find(x=>x.id===d)?.name||d).join(", ")}</div>}
+      {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:6, borderTop:"1px solid #f5f5f5", paddingTop:6 }}>"{task.Notes}"</div>}
+      {task.DocURL && <a href={task.DocURL} style={{ fontSize:11, color:"#0078d4", display:"block" }}>📎 Document lié</a>}
+    </div>
+  );
+}
+
+
 // ── Task Hover Card with Inline Edit ─────────────────────────────────────────
 function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
   const [hover, setHover] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({...task});
   const [saving, setSaving] = useState(false);
+  const [mousePos, setMousePos] = useState({x:0, y:0});
   const cardRef = useRef(null);
   const dept = departments.find(d => d.id === task.DeptID);
   const tt = taskTypes.find(t => t.id === task.TaskType);
@@ -477,9 +500,10 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
   const LB = { fontSize:10, fontWeight:700, color:"#888", display:"block", marginBottom:2, textTransform:"uppercase", letterSpacing:0.5 };
 
   return (
-    <div ref={cardRef} style={{ position:"relative" }}
+    <div style={{ position:"relative" }}
       onMouseEnter={() => !editing && setHover(true)}
-      onMouseLeave={() => !editing && setHover(false)}>
+      onMouseLeave={() => !editing && setHover(false)}
+      onMouseMove={e => setMousePos({x: e.clientX, y: e.clientY})}>
 
       {/* Task pill */}
       <div style={{ fontSize:11, padding:"3px 7px", background:"rgba(255,255,255,0.85)", borderRadius:5, marginBottom:3, display:"flex", alignItems:"center", gap:5, cursor:"pointer", border:"1px solid transparent", transition:"border-color 0.15s" }}
@@ -495,9 +519,9 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
           title="Modifier">✏️</button>
       </div>
 
-      {/* Hover tooltip */}
+      {/* Hover tooltip - fixed position to stay above footer */}
       {hover && !editing && (
-        <div style={{ position:"absolute", left:0, top:"100%", zIndex:800, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.15)", pointerEvents:"none" }}>
+        <div style={{ position:"fixed", left: Math.min(mousePos.x + 12, window.innerWidth - 340), top: Math.max(10, mousePos.y - 160), zIndex:9999, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.2)", pointerEvents:"none" }}>
           <div style={{ fontWeight:700, fontSize:13, color:"#1a1a2e", marginBottom:6 }}>{task.TaskName}</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
             {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
@@ -558,6 +582,10 @@ export default function App() {
   const [filterPillar,setFilterPillar]=useState("ALL");
   const [filterDept,setFilterDept]=useState("ALL");
   const [filterType,setFilterType]=useState("ALL");
+  const [filterParent,setFilterParent]=useState("ALL");
+  const [parentProcesses,setParentProcesses]=useState([]);
+  const [hoveredTask,setHoveredTask]=useState(null);
+  const [hoverPos,setHoverPos]=useState({x:0,y:0});
   const [mermaidMode,setMermaidMode]=useState("global");
   const [msalConfig,setMsalConfig]=useState({clientId:"",tenantId:""});
   const [msToken,setMsToken]=useState(null);
@@ -618,8 +646,9 @@ export default function App() {
   const filteredTasks=useMemo(()=>tasks.filter(t=>
     (filterPillar==="ALL"||departments.find(d=>d.id===t.DeptID)?.pillar===filterPillar)&&
     (filterDept==="ALL"||t.DeptID===filterDept)&&
-    (filterType==="ALL"||t.TaskType===filterType)
-  ),[tasks,departments,filterPillar,filterDept,filterType]);
+    (filterType==="ALL"||t.TaskType===filterType)&&
+    (filterParent==="ALL"||t.ParentID===filterParent)
+  ),[tasks,departments,filterPillar,filterDept,filterType,filterParent]);
   const mermaidCode=useMemo(()=>mermaidMode==="global"?generateMermaid(tasks,departments):generateMermaidPillar(tasks,departments,mermaidMode),[tasks,departments,mermaidMode]);
   const totalHC=departments.reduce((a,b)=>a+b.headcount,0);
   const deptsByPillar=(pk)=>departments.filter(d=>d.pillar===pk);
@@ -737,7 +766,7 @@ export default function App() {
         {/* ══ TÂCHES ══ */}
         {tab==="tasks"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
+            <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
               <div>
                 <button onClick={()=>setTaskModal("new")}
                   style={{display:"flex",alignItems:"center",gap:8,background:`linear-gradient(135deg,${BRAND.red},#c0100e)`,color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"Roboto,sans-serif",boxShadow:"0 4px 14px rgba(213,19,23,0.35)",height:42}}
@@ -746,10 +775,11 @@ export default function App() {
                   <span style={{fontSize:20,lineHeight:1}}>+</span> Nouvelle tâche
                 </button>
               </div>
-              <div style={{flex:1,minWidth:130}}><label style={S.label}>Pilier</label><select style={S.select} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
-              <div style={{flex:1,minWidth:130}}><label style={S.label}>Département</label><select style={S.select} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-              <div style={{flex:1,minWidth:130}}><label style={S.label}>Type</label><select style={S.select} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select></div>
-              <div style={{flex:1,minWidth:100,display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`}}>{filteredTasks.length} tâche{filteredTasks.length!==1?"s":""}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><select style={S.select} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><select style={S.select} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><select style={S.select} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><select style={S.select} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+              <div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} tâche{filteredTasks.length!==1?"s":""}</div></div>
             </div>
             {loading?<div style={{...S.card,textAlign:"center",padding:48,color:"#aaa"}}><Spinner/>Chargement…</div>
             :filteredTasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_FLAMES} alt="" style={{height:80,marginBottom:12}}/><div style={{fontWeight:600,color:"#999",marginBottom:16}}>Aucune tâche — clique sur le bouton rouge !</div><button onClick={()=>setTaskModal("new")} style={{...S.btn(BRAND.red),fontSize:14}}>➕ Ajouter une tâche</button></div>
@@ -763,7 +793,11 @@ export default function App() {
                       const deps=t.Deps?t.Deps.split(",").map(s=>s.trim()).filter(Boolean):[];
                       const sws=t.Softwares?t.Softwares.split(",").map(s=>s.trim()).filter(Boolean):[];
                       const fname=t.DocURL?decodeURIComponent(t.DocURL.split("/").pop().split("?")[0]):"";
-                      return <tr key={t.TaskID}>
+                      return <tr key={t.TaskID}
+                        style={{cursor:"default"}}
+                        onMouseEnter={e=>{setHoveredTask(t);setHoverPos({x:e.clientX,y:e.clientY});}}
+                        onMouseLeave={()=>setHoveredTask(null)}
+                        onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
                         <td style={S.td}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#aaa"}}>{t.Notes}</div>}</td>
@@ -869,7 +903,7 @@ export default function App() {
         {tab==="settings"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-              {[["departments","🏢 Départements"],["softwares","💻 Logiciels"],["types","🏷️ Types de tâches"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
+              {[["departments","🏢 Départements"],["softwares","💻 Logiciels"],["types","🏷️ Types de tâches"],["processes","🔗 Processus parents"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setSettingsTab(k)} style={{padding:"8px 18px",borderRadius:8,border:`2px solid ${settingsTab===k?BRAND.blue:"#ddd"}`,background:settingsTab===k?"rgba(0,92,169,0.08)":"rgba(255,255,255,0.8)",fontWeight:settingsTab===k?700:400,cursor:"pointer",fontSize:13,color:settingsTab===k?BRAND.blue:"#555"}}>{l}</button>
               ))}
             </div>
@@ -923,6 +957,44 @@ export default function App() {
               </div>
             )}
 
+            {settingsTab==="processes"&&(
+              <div>
+                <div style={{...S.card,borderLeft:`4px solid #EB6011`,background:"rgba(235,96,17,0.03)"}}>
+                  <h3 style={{...S.title,margin:"0 0 6px",color:"#EB6011",fontSize:15}}>🔗 PROCESSUS PARENTS</h3>
+                  <p style={{margin:0,fontSize:13,color:"#666"}}>Les processus parents permettent de regrouper des tâches de différents départements sous un même processus transversal.</p>
+                </div>
+                <div style={{...S.card,padding:0,overflow:"hidden"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",borderBottom:"2px solid rgba(235,96,17,0.15)"}}>
+                    <h3 style={{...S.title,margin:0,color:"#EB6011",fontSize:13}}>{parentProcesses.length} PROCESSUS DÉFINIS</h3>
+                  </div>
+                  {parentProcesses.length===0?(
+                    <div style={{padding:"32px",textAlign:"center",color:"#aaa",fontSize:13}}>Aucun processus parent — ils seront créés automatiquement depuis le formulaire de tâche.</div>
+                  ):(
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead><tr>{["Nom","Tâches liées","Actions"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {parentProcesses.map(p=>{
+                          const linked=tasks.filter(t=>t.ParentID===p.id).length;
+                          return <tr key={p.id}>
+                            <td style={S.td}><strong>🔗 {p.name}</strong></td>
+                            <td style={S.td}>{linked>0?<span style={S.pill("#EB6011","#fff3eb")}>{linked} tâche{linked>1?"s":""}</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td>
+                            <td style={S.td}><button onClick={()=>setParentProcesses(prev=>prev.filter(x=>x.id!==p.id))} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td>
+                          </tr>;
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <div style={{...S.card,borderLeft:"4px solid #EB6011"}}>
+                  <h4 style={{...S.title,margin:"0 0 12px",fontSize:12,color:"#b05010"}}>AJOUTER UN PROCESSUS MANUELLEMENT</h4>
+                  <div style={{display:"flex",gap:10}}>
+                    <input id="new-process-input" style={{...S.input,flex:1}} placeholder="Nom du processus (ex: Gestion commande fournisseur)…"/>
+                    <button onClick={()=>{const inp=document.getElementById("new-process-input");if(!inp.value.trim())return;setParentProcesses(prev=>[...prev,{id:"PP"+Date.now(),name:inp.value.trim()}]);inp.value="";showSync("ok","✅ Processus ajouté !");}} style={{...S.btn("#EB6011"),whiteSpace:"nowrap"}}>➕ Ajouter</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {settingsTab==="sharepoint"&&(
               <div>
                 <div style={{...S.card,borderLeft:"4px solid #0078d4",background:"rgba(0,120,212,0.03)"}}>
@@ -966,7 +1038,7 @@ export default function App() {
       <div style={{height:8,background:BRAND.red}}/>
 
       {/* ── Modals ── */}
-      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
+      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} parentProcesses={parentProcesses} onAddProcess={p=>setParentProcesses(prev=>[...prev,typeof p==="string"?{id:"PP"+Date.now(),name:p}:p])} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
       {deptModal&&<DeptModal dept={deptModal==="new"?null:deptModal} onSave={saveDept} onClose={()=>setDeptModal(null)}/>}
     </div>
   );
