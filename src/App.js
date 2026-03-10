@@ -52,6 +52,7 @@ const DEFAULT_DEPARTMENTS = [
   { id:"hr",          name:"HR",                  manager:"WARNANT Hervé",           headcount:0, pillar:"E2O", keyuser:"" },
   { id:"finance",     name:"Finance",             manager:"TONGLET Justine",         headcount:0, pillar:"E2O", keyuser:"" },
   { id:"achats",      name:"Achats",              manager:"DEWINGAERDEN Gauthier",   headcount:0, pillar:"P2S", keyuser:"" },
+  { id:"it",          name:"IT",                  manager:"Audric DESPONTIN",        headcount:0, pillar:"E2O", keyuser:"" },
 ];
 
 const DEFAULT_SERVICES = [
@@ -89,8 +90,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.11.0";
-const APP_BUILD = "11/03/2026 10:00";
+const APP_VERSION = "v3.11.1";
+const APP_BUILD = "11/03/2026 10:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -924,7 +925,7 @@ export default function App() {
       .then(([td,sd,dd])=>{
         if(td.status==="ok") setTasks(td.tasks||[]);
         if(sd.status==="ok") setSoftwares(prev => { const fromApi = sd.softwares||[]; const merged = [...DEFAULT_SOFTWARES]; fromApi.forEach(sw => { if(!merged.find(s=>s.id===sw.id)) merged.push(sw); }); return merged; });
-        if(dd.status==="ok"&&dd.depts&&dd.depts.length>0) setDepartments(dd.depts);
+        if(dd.status==="ok"&&dd.depts&&dd.depts.length>0){const merged=DEFAULT_DEPARTMENTS.map(d=>dd.depts.find(x=>x.id===d.id)||d);dd.depts.forEach(x=>{if(!merged.find(d=>d.id===x.id))merged.push(x);});setDepartments(merged);}
         setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s), ${sd.softwares?.length||0} logiciel(s), ${dd.depts?.length||0} département(s) chargés`}]);
       })
       .catch(()=>showSync("error","❌ Impossible de contacter Google Sheets."))
@@ -1249,7 +1250,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.11.1 — IT dans DEFAULT_DEPARTMENTS, merge Sheets+défauts au chargement\nv3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
