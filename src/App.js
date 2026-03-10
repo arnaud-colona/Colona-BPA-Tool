@@ -15,7 +15,7 @@ function TooltipPortal({ children }) {
 
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxhf3YWW1k2kJpM_0bvk_q_9g_CDay1RgzbJvmjy7WOe-qHIUY_nhC8MRE6WjcP98vfxA/exec";
-const IMG_LOGO   = "https://i.imgur.com/mc6kH1m.jpg";
+const IMG_LOGO   = "https://i.postimg.cc/sxG70mPb/Colona-logo-sans-baseline-2025-09-2025.png";
 const IMG_FRITE  = "";
 const IMG_PIMENT = "";
 const IMG_OIGNON = "";
@@ -89,8 +89,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.9.0";
-const APP_BUILD = "10/03/2026 22:30";
+const APP_VERSION = "v3.9.1";
+const APP_BUILD = "10/03/2026 23:00";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -1119,18 +1119,18 @@ export default function App() {
                   <thead><tr>{["Pilier","Département","Service","Processus","Statut","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
-                      const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
+                      const dept=departments.find(d=>d.id===t.DeptID);
                       const deps=t.Deps?t.Deps.split(",").map(s=>s.trim()).filter(Boolean):[];
                       const sws=t.Softwares?t.Softwares.split(",").map(s=>s.trim()).filter(Boolean):[];
                       const fname=t.DocURL?decodeURIComponent(t.DocURL.split("/").pop().split("?")[0]):"";
                       return <tr key={t.TaskID}
-                        style={{cursor:"pointer"}}
+                        style={{cursor:"pointer",background:!dept?"#fffbe6":undefined}}
                         onClick={()=>setTaskModal(t)}
                         onMouseEnter={e=>{setHoveredTask(t);setHoverPos({x:e.clientX,y:e.clientY});}}
                         onMouseLeave={()=>setHoveredTask(null)}
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
-                        <td style={S.td}><Badge pillar={dept.pillar}/></td>
-                        <td style={S.td}><strong>{dept.name}</strong></td>
+                        <td style={S.td}>{dept?<Badge pillar={dept.pillar}/>:<span title="Département manquant — cliquez pour corriger" style={{fontSize:14}}>⚠️</span>}</td>
+                        <td style={S.td}>{dept?<strong>{dept.name}</strong>:<span style={{color:"#e67e22",fontSize:12,fontWeight:700,fontStyle:"italic"}}>⚠️ À réassigner</span>}</td>
                         <td style={S.td}>{(()=>{const svc=services.find(s=>s.id===t.ServiceID);return svc?<span style={{background:"#f0f4ff",color:"#005CA9",border:"1px solid #005CA920",borderRadius:8,padding:"2px 8px",fontSize:11,fontWeight:600}}>{svc.name}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})()}</td>
                         <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
                         <td style={S.td}>{t.Validated?<span style={{background:"#e6f7ed",color:"#00A23A",border:"1px solid #00A23A40",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>✅ Validé</span>:<span style={{background:"#fff3e0",color:"#EB6011",border:"1px solid #EB601140",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⏳ En cours</span>}</td>
@@ -1245,7 +1245,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
