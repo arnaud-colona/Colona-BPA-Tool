@@ -66,8 +66,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.0.0";
-const APP_BUILD = "10/03/2026 15:20";
+const APP_VERSION = "v3.1.0";
+const APP_BUILD = "10/03/2026 15:34";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -91,7 +91,7 @@ async function apiDeleteTask(id) { const r=await fetch(API_URL+"?action=deleteTa
 async function apiAddSoftware(n) { const r=await fetch(API_URL+"?action=addSoftware&name="+encodeURIComponent(n),{redirect:"follow"}); return r.json(); }
 
 function generateMermaid(tasks,depts) {
-  if(!tasks.length) return "flowchart LR\n  A[Aucune tâche encodée]";
+  if(!tasks.length) return "flowchart LR\n  A[Aucun processus encodée]";
   const lines=["flowchart TD","  %% Colona BPA"];
   Object.entries(PILLARS).forEach(([pk,pv])=>{
     const active=depts.filter(d=>d.pillar===pk&&tasks.find(t=>t.DeptID===d.id));
@@ -115,7 +115,7 @@ function generateMermaid(tasks,depts) {
 function generateMermaidPillar(tasks,depts,pk) {
   const pd=depts.filter(d=>d.pillar===pk);
   const rel=tasks.filter(t=>pd.find(d=>d.id===t.DeptID));
-  if(!rel.length) return `flowchart LR\n  A["Aucune tâche pour ce pilier"]`;
+  if(!rel.length) return `flowchart LR\n  A["Aucun processus pour ce pilier"]`;
   const lines=[`flowchart LR`,`  %% ${PILLARS[pk].label}`];
   pd.forEach(d=>{
     const ts=rel.filter(t=>t.DeptID===d.id);
@@ -381,11 +381,11 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
   const MODAL_TABS = [["general","📋 Général"],["analyse","🔍 Analyse"],["actors","👥 Acteurs"],["status","✅ Statut"]];
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
-      <div style={{width:"100%",maxWidth:860,maxHeight:"92vh",background:"#fff",borderRadius:"18px 18px 0 0",display:"flex",flexDirection:"column",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}} onClick={onClose}>
+      <div style={{width:"100%",maxWidth:860,maxHeight:"90vh",background:"#fff",borderRadius:16,display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
         <div style={{background:`linear-gradient(135deg,${BRAND.red},#b01015)`,padding:"16px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"BROTHER,sans-serif",color:"#fff",fontSize:16,letterSpacing:1}}>{isNew?"NOUVELLE TÂCHE":"MODIFIER LA TÂCHE"}</div>
+            <div style={{fontFamily:"BROTHER,sans-serif",color:"#fff",fontSize:16,letterSpacing:1}}>{isNew?"NOUVEAU PROCESSUS":"MODIFIER LE PROCESSUS"}</div>
             {!isNew&&<div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2}}>v{form.Version} · modifié le {form.UpdatedAt||"—"}</div>}
           </div>
           <span style={{background:statusBadge.bg,color:statusBadge.color,border:`1px solid ${statusBadge.border}`,borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700}}>{statusBadge.label}</span>
@@ -413,8 +413,8 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
                   ))}
                 </select>
               </div>
-              <div><label style={LB}>📝 Nom de la tâche *</label><input style={IS} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
-              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🏷️ Type de tâche</label><TaskTypeSelector value={form.TaskType} onChange={v=>setForm(f=>({...f,TaskType:v}))} taskTypes={taskTypes}/></div>
+              <div><label style={LB}>📝 Nom de le processus *</label><input style={IS} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
+              <div style={{gridColumn:"1 / -1"}}><label style={LB}>🏷️ Type de processus</label><TaskTypeSelector value={form.TaskType} onChange={v=>setForm(f=>({...f,TaskType:v}))} taskTypes={taskTypes}/></div>
               <div style={{gridColumn:"1 / -1"}}><label style={LB}>🔗 Processus parent</label>
                 <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const pname=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name:pname});setForm(f=>({...f,ParentID:newId}));}else setForm(f=>({...f,ParentID:v}));}} parentProcesses={parentProcesses} currentTaskId={editTask?.TaskID||""}/>
               </div>
@@ -726,13 +726,13 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
         <span
           onClick={() => { setHover(false); onNavigate(task.TaskID); }}
           style={{ fontWeight:600, color:"#2c2c3e", cursor:"pointer", flex:1, lineHeight:1.3, textDecoration:"underline", textDecorationColor:"#ccc" }}
-          title="Cliquer pour ouvrir l'édition de cette tâche">
+          title="Cliquer pour ouvrir l'édition de ce processus">
           ▸ {task.TaskName}
         </span>
         <button
           onClick={e => { e.stopPropagation(); setForm({...task}); setEditing(true); setHover(false); }}
           style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#bbb", padding:"0 2px", flexShrink:0, lineHeight:1 }}
-          title="Modifier cette tâche">✏️</button>
+          title="Modifier ce processus">✏️</button>
       </div>
 
       {/* Hover preview tooltip — rendered via Portal to escape overflow/transform */}
@@ -777,7 +777,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
             <button onClick={() => setEditing(false)} style={{ background:"#f5f5f5", border:"none", borderRadius:50, width:26, height:26, cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
           </div>
           <div style={{ display:"grid", gap:9 }}>
-            <div><label style={LB}>Nom de la tâche</label><input style={IL} value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
+            <div><label style={LB}>Nom de le processus</label><input style={IL} value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
             <div><label style={LB}>Description</label>
               <textarea rows={2} style={{...IL, resize:"vertical", minHeight:52, lineHeight:1.5}} placeholder="Description…" value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}></textarea>
             </div>
@@ -868,7 +868,7 @@ export default function App() {
     setSaving(false);
   };
   const deleteTask=async(id)=>{
-    if(!window.confirm("Supprimer cette tâche ?")) return;
+    if(!window.confirm("Supprimer ce processus ?")) return;
     try{await apiDeleteTask(id);setTasks(p=>p.filter(t=>t.TaskID!==id));showSync("ok","✅ Supprimée.");}
     catch{showSync("error","❌ Erreur.");}
   };
@@ -960,7 +960,7 @@ export default function App() {
 
       {/* ── TABS — sans "Saisie" ── */}
       <div style={S.tabs}>
-        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🗺️ Cartographie"],["mermaid","🧠 Mindmap"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
+        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Processus"],["taxonomy","🗺️ Cartographie"],["mermaid","🧠 Mindmap"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
           <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -1006,7 +1006,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ══ TÂCHES ══ */}
+        {/* ══ PROCESSUS ══ */}
         {tab==="tasks"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
@@ -1015,21 +1015,21 @@ export default function App() {
                   style={{display:"flex",alignItems:"center",gap:8,background:`linear-gradient(135deg,${BRAND.red},#c0100e)`,color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"Roboto,sans-serif",boxShadow:"0 4px 14px rgba(213,19,23,0.35)",height:42}}
                   onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(213,19,23,0.55)"}
                   onMouseLeave={e=>e.currentTarget.style.boxShadow="0 4px 14px rgba(213,19,23,0.35)"}>
-                  <span style={{fontSize:20,lineHeight:1}}>+</span> Nouvelle tâche
+                  <span style={{fontSize:20,lineHeight:1}}>+</span> Nouveau processus
                 </button>
               </div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><select style={S.select} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><select style={S.select} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><select style={S.select} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><select style={S.select} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-              <div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} tâche{filteredTasks.length!==1?"s":""}</div></div>
+              <div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
             </div>
             {loading?<div style={{...S.card,textAlign:"center",padding:48,color:"#aaa"}}><Spinner/>Chargement…</div>
-            :filteredTasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_FLAMES} alt="" style={{height:80,marginBottom:12}}/><div style={{fontWeight:600,color:"#999",marginBottom:16}}>Aucune tâche — clique sur le bouton rouge !</div><button onClick={()=>setTaskModal("new")} style={{...S.btn(BRAND.red),fontSize:14}}>➕ Ajouter une tâche</button></div>
+            :filteredTasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_FLAMES} alt="" style={{height:80,marginBottom:12}}/><div style={{fontWeight:600,color:"#999",marginBottom:16}}>Aucun processus — clique sur le bouton rouge !</div><button onClick={()=>setTaskModal("new")} style={{...S.btn(BRAND.red),fontSize:14}}>➕ Ajouter un processus</button></div>
             :(
               <div style={{...S.card,padding:0,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>{["Pilier","Département","Tâche","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["Pilier","Département","Processus","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
                       const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
@@ -1108,7 +1108,7 @@ export default function App() {
                 <button key={k} onClick={()=>setMermaidMode(k)} style={{padding:"9px 18px",borderRadius:8,border:`2px solid ${mermaidMode===k?BRAND.red:"#ddd"}`,background:mermaidMode===k?"rgba(213,19,23,0.08)":"rgba(255,255,255,0.8)",fontWeight:mermaidMode===k?700:400,cursor:"pointer",fontSize:13,color:mermaidMode===k?BRAND.red:"#555"}}>{l}</button>
               ))}
             </div>
-            {tasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_BURGER} alt="" style={{height:100,marginBottom:12,animation:"floatSlow 4s ease-in-out infinite"}}/><div style={{fontWeight:600,color:"#999"}}>Encode d\'abord des tâches avec des dépendances</div></div>
+            {tasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_BURGER} alt="" style={{height:100,marginBottom:12,animation:"floatSlow 4s ease-in-out infinite"}}/><div style={{fontWeight:600,color:"#999"}}>Encode d\'abord des processus avec des dépendances</div></div>
             :<MermaidBlock code={mermaidCode}/>}
           </div>
         )}
@@ -1146,7 +1146,7 @@ export default function App() {
         {tab==="settings"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-              {[["departments","🏢 Départements"],["softwares","🛠️ Outils digitaux"],["types","🏷️ Types de tâches"],["processes","🔗 Processus parents"],["employees","👤 Employés"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
+              {[["departments","🏢 Départements"],["softwares","🛠️ Outils digitaux"],["types","🏷️ Types de processus"],["processes","🔗 Processus parents"],["employees","👤 Employés"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setSettingsTab(k)} style={{padding:"8px 18px",borderRadius:8,border:`2px solid ${settingsTab===k?BRAND.blue:"#ddd"}`,background:settingsTab===k?"rgba(0,92,169,0.08)":"rgba(255,255,255,0.8)",fontWeight:settingsTab===k?700:400,cursor:"pointer",fontSize:13,color:settingsTab===k?BRAND.blue:"#555"}}>{l}</button>
               ))}
               <div style={{flex:1}}/>
@@ -1190,7 +1190,7 @@ export default function App() {
 
             {settingsTab==="types"&&(
               <div>
-                <div style={{...S.card,borderLeft:"4px solid #F7A600"}}><h3 style={{...S.title,margin:"0 0 6px",color:"#b07700",fontSize:15}}>TYPES DE TÂCHES</h3></div>
+                <div style={{...S.card,borderLeft:"4px solid #F7A600"}}><h3 style={{...S.title,margin:"0 0 6px",color:"#b07700",fontSize:15}}>TYPES DE PROCESSUS</h3></div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,marginBottom:20}}>
                   {taskTypes.map(tt=><div key={tt.id} style={{...S.card,marginBottom:0,borderTop:`4px solid ${tt.color}`,display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:28}}>{tt.icon}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:tt.color}}>{tt.name}</div><div style={{fontSize:11,color:"#aaa",marginTop:2}}>{tasks.filter(t=>t.TaskType===tt.id).length} tâche(s)</div></div></div>)}
                 </div>
@@ -1210,7 +1210,7 @@ export default function App() {
               <div>
                 <div style={{...S.card,borderLeft:`4px solid #EB6011`,background:"rgba(235,96,17,0.03)"}}>
                   <h3 style={{...S.title,margin:"0 0 6px",color:"#EB6011",fontSize:15}}>🔗 PROCESSUS PARENTS</h3>
-                  <p style={{margin:0,fontSize:13,color:"#666"}}>Les processus parents permettent de regrouper des tâches de différents départements sous un même processus transversal.</p>
+                  <p style={{margin:0,fontSize:13,color:"#666"}}>Les processus parents permettent de regrouper des processus de différents départements sous un même processus transversal.</p>
                 </div>
                 <div style={{...S.card,padding:0,overflow:"hidden"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",borderBottom:"2px solid rgba(235,96,17,0.15)"}}>
@@ -1220,13 +1220,13 @@ export default function App() {
                     <div style={{padding:"32px",textAlign:"center",color:"#aaa",fontSize:13}}>Aucun processus parent — ils seront créés automatiquement depuis le formulaire de tâche.</div>
                   ):(
                     <table style={{width:"100%",borderCollapse:"collapse"}}>
-                      <thead><tr>{["Nom","Tâches liées","Actions"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Nom","Processus liés","Actions"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {parentProcesses.map(p=>{
                           const linked=tasks.filter(t=>t.ParentID===p.id).length;
                           return <tr key={p.id}>
                             <td style={S.td}><strong>🔗 {p.name}</strong></td>
-                            <td style={S.td}>{linked>0?<span style={S.pill("#EB6011","#fff3eb")}>{linked} tâche{linked>1?"s":""}</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td>
+                            <td style={S.td}>{linked>0?<span style={S.pill("#EB6011","#fff3eb")}>{linked} processus</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td>
                             <td style={S.td}><button onClick={()=>setParentProcesses(prev=>prev.filter(x=>x.id!==p.id))} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td>
                           </tr>;
                         })}
