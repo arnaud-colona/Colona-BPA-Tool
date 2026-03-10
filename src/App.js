@@ -338,7 +338,7 @@ export default function App() {
 
   const CSS = `
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
-    @font-face{font-family:'BROTHER';src:url('data:font/truetype;base64,` + font_b64 + `') format('truetype');}
+    @font-face{font-family:'BROTHER';src:url('data:font/truetype;base64,' + BROTHER_FONT + `') format('truetype');}
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
     @keyframes floatSlow{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
