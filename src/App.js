@@ -76,8 +76,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.6.0";
-const APP_BUILD = "10/03/2026 19:00";
+const APP_VERSION = "v3.7.0";
+const APP_BUILD = "10/03/2026 20:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -888,6 +888,8 @@ export default function App() {
   const [newTypeIcon,setNewTypeIcon]=useState("📌");
   const [newTypeColor,setNewTypeColor]=useState("#8e44ad");
   const [odooUrl,setOdooUrl]=useState("");
+  const [newProcessName,setNewProcessName]=useState("");
+  const [showUserPicker,setShowUserPicker]=useState(false);
   const [odooLoading,setOdooLoading]=useState(false);
   const [versionLog,setVersionLog]=useState([{v:1,ts:new Date().toLocaleString("fr-BE"),desc:"Connexion à Google Sheets…"}]);
 
@@ -1002,17 +1004,23 @@ export default function App() {
            <div style={{textAlign:"right",paddingBottom:10,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
               <div style={{...S.title,color:"#FDCA00",fontSize:20}}>{loading?<><Spinner/> Chargement…</>:tasks.length+" PROCESSUS"}</div>
               <div style={{color:"rgba(255,255,255,0.5)",fontSize:11}}>{loading?"Connexion…":"✅ Sync Google Sheets"}</div>
-              <div style={{display:"flex",alignItems:"center",gap:3,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 4px"}}>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.6)",paddingLeft:6}}>👤</span>
-                {["arnaud","audric"].map(u=>(
-                  <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);}}
-                    style={{padding:"3px 10px",borderRadius:16,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,
-                      background:currentUser===u?"#fff":"transparent",
-                      color:currentUser===u?BRAND.red:"rgba(255,255,255,0.7)",
-                      textTransform:"capitalize",transition:"all 0.15s"}}>
-                    {u.charAt(0).toUpperCase()+u.slice(1)}
-                  </button>
-                ))}
+              <div style={{position:"relative"}}>
+                <button onClick={()=>setShowUserPicker(v=>!v)} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"5px 14px 5px 10px",border:"none",cursor:"pointer",color:"#fff"}}>
+                  <span style={{fontSize:12}}>👤</span>
+                  <span style={{fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{currentUser.charAt(0).toUpperCase()+currentUser.slice(1)}</span>
+                  <span style={{fontSize:9,opacity:0.7,marginLeft:2}}>▼</span>
+                </button>
+                {showUserPicker&&(
+                  <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",background:"#fff",borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.2)",minWidth:160,zIndex:9999,overflow:"hidden",border:"1px solid #eee"}}>
+                    <div style={{padding:"8px 14px 6px",fontSize:10,color:"#aaa",fontWeight:700,letterSpacing:1,borderBottom:"1px solid #f0f0f0"}}>CHANGER D'UTILISATEUR</div>
+                    {["arnaud","audric",...employees.map(e=>e.name).filter(n=>n!=="arnaud"&&n!=="audric")].map(u=>(
+                      <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);setShowUserPicker(false);}}
+                        style={{display:"block",width:"100%",textAlign:"left",padding:"8px 16px",border:"none",background:currentUser===u?"rgba(213,19,23,0.07)":"transparent",cursor:"pointer",fontSize:13,fontWeight:currentUser===u?700:400,color:currentUser===u?BRAND.red:"#333",textTransform:"capitalize"}}>
+                        {currentUser===u?"✓ ":""}{u.charAt(0).toUpperCase()+u.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1086,7 +1094,7 @@ export default function App() {
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterDept!=="ALL"?"28px":undefined}} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>{filterDept!=="ALL"&&<button onClick={()=>setFilterDept("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterType!=="ALL"?"28px":undefined}} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select>{filterType!=="ALL"&&<button onClick={()=>setFilterType("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterParent!=="ALL"?"28px":undefined}} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>{filterParent!=="ALL"&&<button onClick={()=>setFilterParent("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
-              <div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
+              {(filterPillar!=="ALL"||filterDept!=="ALL"||filterType!=="ALL"||filterParent!=="ALL")&&(<div style={{display:"flex",alignItems:"flex-end"}}><button onClick={()=>{setFilterPillar("ALL");setFilterDept("ALL");setFilterType("ALL");setFilterParent("ALL");}} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 18px",background:"#fdecea",border:"2px solid #D51317",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,color:"#D51317",height:42,whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(213,19,23,0.2)"}}>✕ Tout effacer</button></div>)}<div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
             </div>
             {loading?<div style={{...S.card,textAlign:"center",padding:48,color:"#aaa"}}><Spinner/>Chargement…</div>
             :filteredTasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_FLAMES} alt="" style={{height:80,marginBottom:12}}/><div style={{fontWeight:600,color:"#999",marginBottom:16}}>Aucun processus — clique sur le bouton rouge !</div><button onClick={()=>setTaskModal("new")} style={{...S.btn(BRAND.red),fontSize:14}}>➕ Ajouter un processus</button></div>
@@ -1221,7 +1229,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
@@ -1305,8 +1313,8 @@ export default function App() {
                 <div style={{...S.card,borderLeft:"4px solid #EB6011"}}>
                   <h4 style={{...S.title,margin:"0 0 12px",fontSize:12,color:"#b05010"}}>AJOUTER UN PROCESSUS MANUELLEMENT</h4>
                   <div style={{display:"flex",gap:10}}>
-                    <input id="new-process-input" style={{...S.input,flex:1}} placeholder="Nom du processus (ex: Gestion commande fournisseur)…"/>
-                    <button onClick={()=>{const inp=document.getElementById("new-process-input");if(!inp.value.trim())return;setParentProcesses(prev=>[...prev,{id:"PP"+Date.now(),name:inp.value.trim()}]);inp.value="";showSync("ok","✅ Processus ajouté !");}} style={{...S.btn("#EB6011"),whiteSpace:"nowrap"}}>➕ Ajouter</button>
+                    <input style={{...S.input,flex:1}} placeholder="Nom du processus (ex: Gestion commande fournisseur)…" value={newProcessName} onChange={e=>setNewProcessName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newProcessName.trim()){setParentProcesses(prev=>[...prev,{id:"PP"+Date.now(),name:newProcessName.trim()}]);setNewProcessName("");showSync("ok","✅ Processus ajouté !");}}} />
+                    <button onClick={()=>{if(!newProcessName.trim())return;setParentProcesses(prev=>[...prev,{id:"PP"+Date.now(),name:newProcessName.trim()}]);setNewProcessName("");showSync("ok","✅ Processus ajouté !");}} disabled={!newProcessName.trim()} style={{...S.btn(!newProcessName.trim()?"#ccc":"#EB6011"),whiteSpace:"nowrap"}}>➕ Ajouter</button>
                   </div>
                 </div>
               </div>
