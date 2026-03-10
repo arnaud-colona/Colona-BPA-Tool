@@ -90,8 +90,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.12.0";
-const APP_BUILD = "11/03/2026 11:00";
+const APP_VERSION = "v3.13.0";
+const APP_BUILD = "11/03/2026 11:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -113,6 +113,8 @@ async function apiFetch(p) { const r=await fetch(API_URL+"?"+new URLSearchParams
 async function apiSaveTask(t) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveTask",task:t}),redirect:"follow"}); return r.json(); }
 async function apiSaveDept(d) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveDept",dept:d}),redirect:"follow"}); return r.json(); }
 async function apiDeleteDept(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteDept",deptId:id}),redirect:"follow"}); return r.json(); }
+async function apiSaveService(s) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"saveService",service:s}),redirect:"follow"}); return r.json(); }
+async function apiDeleteService(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteService",serviceId:id}),redirect:"follow"}); return r.json(); }
 async function apiDeleteTask(id) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"deleteTask",taskId:id}),redirect:"follow"}); return r.json(); }
 async function apiAddSoftware(n) { const r=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"addSoftware",name:n}),redirect:"follow"}); return r.json(); }
 
@@ -921,12 +923,13 @@ export default function App() {
 
   useEffect(()=>{
     setLoading(true);
-    Promise.all([apiFetch({action:"getTasks"}),apiFetch({action:"getSoftwares"}),apiFetch({action:"getDepts"})])
-      .then(([td,sd,dd])=>{
+    Promise.all([apiFetch({action:"getTasks"}),apiFetch({action:"getSoftwares"}),apiFetch({action:"getDepts"}),apiFetch({action:"getServices"})])
+      .then(([td,sd,dd,sv])=>{
         if(td.status==="ok") setTasks(td.tasks||[]);
         if(sd.status==="ok") setSoftwares(prev => { const fromApi = sd.softwares||[]; const merged = [...DEFAULT_SOFTWARES]; fromApi.forEach(sw => { if(!merged.find(s=>s.id===sw.id)) merged.push(sw); }); return merged; });
         if(dd.status==="ok"&&dd.depts&&dd.depts.length>0){const merged=DEFAULT_DEPARTMENTS.map(d=>dd.depts.find(x=>x.id===d.id)||d);dd.depts.forEach(x=>{if(!merged.find(d=>d.id===x.id))merged.push(x);});setDepartments(merged);}
-        setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s), ${sd.softwares?.length||0} logiciel(s), ${dd.depts?.length||0} département(s) chargés`}]);
+        if(sv.status==="ok"&&sv.services&&sv.services.length>0){const merged=DEFAULT_SERVICES.map(s=>sv.services.find(x=>x.id===s.id)||s);sv.services.forEach(x=>{if(!merged.find(s=>s.id===x.id))merged.push(x);});setServices(merged);}
+        setVersionLog(l=>[...l,{v:2,ts:new Date().toLocaleString("fr-BE"),desc:`✅ ${td.tasks?.length||0} tâche(s), ${sd.softwares?.length||0} logiciel(s), ${dd.depts?.length||0} depts, ${sv.services?.length||0} services chargés`}]);
       })
       .catch(()=>showSync("error","❌ Impossible de contacter Google Sheets."))
       .finally(()=>setLoading(false));
@@ -1294,7 +1297,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.12.0 — Vue d'ensemble: bloc services + compteur services dans piliers\nv3.11.1 — IT dans DEFAULT_DEPARTMENTS, merge Sheets+défauts au chargement\nv3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.13.0 — Services persistés Sheets, édition inline nom service\nv3.12.0 — Vue d'ensemble: bloc services + compteur services dans piliers\nv3.11.1 — IT dans DEFAULT_DEPARTMENTS, merge Sheets+défauts au chargement\nv3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
@@ -1320,30 +1323,63 @@ export default function App() {
               </div>
             )}
 
-            {settingsTab==="services"&&(
-              <div>
+            {settingsTab==="services"&&(()=>{
+              const [editSvcId,setEditSvcId]=React.useState(null);
+              const [editSvcName,setEditSvcName]=React.useState("");
+              const [newSvcName,setNewSvcName]=React.useState({});
+              const saveService=async(svc)=>{
+                setServices(p=>p.find(x=>x.id===svc.id)?p.map(x=>x.id===svc.id?svc:x):[...p,svc]);
+                showSync("ok",`✅ Service "${svc.name}" enregistré`);
+                try{await apiSaveService(svc);}catch(e){showSync("error","⚠️ Local OK, sync Sheets échouée");}
+              };
+              const deleteService=async(id,name)=>{
+                if(!window.confirm(`Supprimer "${name}" ?`)) return;
+                setServices(p=>p.filter(x=>x.id!==id));
+                showSync("ok","✅ Service supprimé");
+                try{await apiDeleteService(id);}catch(e){}
+              };
+              return <div>
                 {departments.map(d=>{
                   const dsvcs=services.filter(s=>s.deptId===d.id);
                   const pv=PILLARS[d.pillar];
+                  const nv=newSvcName[d.id]||"";
                   return <div key={d.id} style={{...S.card,borderLeft:`4px solid ${pv?.color||"#ccc"}`,marginBottom:12}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:dsvcs.length>0?10:0}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         <Badge pillar={d.pillar}/>
                         <strong style={{fontSize:14}}>{d.name}</strong>
                         <span style={{fontSize:11,color:"#aaa"}}>{dsvcs.length} service{dsvcs.length!==1?"s":""}</span>
                       </div>
-                      <button onClick={()=>{const name=window.prompt(`Nouveau service pour "${d.name}" :`);if(name&&name.trim()){setServices(p=>[...p,{id:"SVC"+Date.now(),name:name.trim(),deptId:d.id}]);showSync("ok","✅ Service ajouté !");}}} style={{...S.btn("#005CA9"),padding:"5px 12px",fontSize:12}}>➕ Ajouter</button>
                     </div>
-                    {dsvcs.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                      {dsvcs.map(s=><span key={s.id} style={{display:"inline-flex",alignItems:"center",gap:5,background:"#f0f4ff",border:"1px solid #005CA920",borderRadius:20,padding:"4px 10px",fontSize:12}}>
-                        <span style={{fontWeight:600,color:"#005CA9"}}>{s.name}</span>
-                        <button onClick={()=>{if(window.confirm(`Supprimer "${s.name}" ?`))setServices(p=>p.filter(x=>x.id!==s.id));}} style={{background:"none",border:"none",color:"#aaa",cursor:"pointer",fontSize:13,padding:0,lineHeight:1}}>×</button>
-                      </span>)}
-                    </div>}
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+                      {dsvcs.map(s=>{
+                        const isEditing=editSvcId===s.id;
+                        return <span key={s.id} style={{display:"inline-flex",alignItems:"center",gap:5,background:isEditing?"#fff3eb":"#f0f4ff",border:`1px solid ${isEditing?"#EB601160":"#005CA920"}`,borderRadius:20,padding:"4px 4px 4px 10px",fontSize:12}}>
+                          {isEditing
+                            ?<input autoFocus value={editSvcName} onChange={e=>setEditSvcName(e.target.value)}
+                                onKeyDown={e=>{if(e.key==="Enter"&&editSvcName.trim()){saveService({...s,name:editSvcName.trim()});setEditSvcId(null);}if(e.key==="Escape")setEditSvcId(null);}}
+                                style={{border:"none",outline:"none",background:"transparent",fontWeight:700,color:"#EB6011",width:Math.max(60,editSvcName.length*8),fontSize:12}}/>
+                            :<span style={{fontWeight:600,color:"#005CA9",cursor:"text"}} title="Cliquer pour renommer" onClick={()=>{setEditSvcId(s.id);setEditSvcName(s.name);}}>{s.name}</span>}
+                          {isEditing
+                            ?<><button onClick={()=>{if(editSvcName.trim()){saveService({...s,name:editSvcName.trim()});setEditSvcId(null);}}} style={{background:"#e6f7ed",border:"none",borderRadius:20,color:"#00A23A",cursor:"pointer",fontSize:11,padding:"2px 7px",fontWeight:700}}>✓</button>
+                               <button onClick={()=>setEditSvcId(null)} style={{background:"none",border:"none",color:"#aaa",cursor:"pointer",fontSize:12,padding:"0 4px"}}>✕</button></>
+                            :<><button onClick={()=>{setEditSvcId(s.id);setEditSvcName(s.name);}} style={{background:"none",border:"none",color:"#005CA9",cursor:"pointer",fontSize:11,padding:"0 2px",opacity:0.6}} title="Renommer">✏️</button>
+                               <button onClick={()=>deleteService(s.id,s.name)} style={{background:"none",border:"none",color:"#aaa",cursor:"pointer",fontSize:12,padding:"0 4px",lineHeight:1}}>×</button></>}
+                        </span>;
+                      })}
+                    </div>
+                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                      <input value={nv} onChange={e=>setNewSvcName(p=>({...p,[d.id]:e.target.value}))}
+                        onKeyDown={e=>{if(e.key==="Enter"&&nv.trim()){const ns={id:"SVC"+Date.now(),name:nv.trim(),deptId:d.id};saveService(ns);setNewSvcName(p=>({...p,[d.id]:""}));}}}
+                        placeholder={`Nouveau service pour ${d.name}…`}
+                        style={{flex:1,padding:"6px 12px",border:"1.5px solid #ddd",borderRadius:20,fontSize:12,outline:"none"}}/>
+                      <button onClick={()=>{if(!nv.trim())return;const ns={id:"SVC"+Date.now(),name:nv.trim(),deptId:d.id};saveService(ns);setNewSvcName(p=>({...p,[d.id]:""}));}}
+                        disabled={!nv.trim()} style={{...S.btn(nv.trim()?"#005CA9":"#ccc"),padding:"6px 14px",fontSize:12,borderRadius:20}}>➕ Ajouter</button>
+                    </div>
                   </div>;
                 })}
-              </div>
-            )}
+              </div>;
+            })()}
 
             {settingsTab==="softwares"&&(
               <div>
