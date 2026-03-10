@@ -15,7 +15,7 @@ function TooltipPortal({ children }) {
 
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxhf3YWW1k2kJpM_0bvk_q_9g_CDay1RgzbJvmjy7WOe-qHIUY_nhC8MRE6WjcP98vfxA/exec";
-const IMG_LOGO   = "https://i.postimg.cc/sxG70mPb/Colona-logo-sans-baseline-2025-09-2025.png";
+const IMG_LOGO   = "https://i.imgur.com/mc6kH1m.jpg";
 const IMG_FRITE  = "";
 const IMG_PIMENT = "";
 const IMG_OIGNON = "";
@@ -41,31 +41,44 @@ const DEFAULT_SOFTWARES = [
 
 
 const DEFAULT_DEPARTMENTS = [
-  { id:"achats",      name:"Achats",          manager:"DEWINGAERDEN Gauthier", headcount:1,  pillar:"P2S" },
-  { id:"commercial",  name:"Commercial",       manager:"COLON Maxime",          headcount:6,  pillar:"O2C" },
-  { id:"compta",      name:"Comptabilité",     manager:"TONGLET Justine",       headcount:3,  pillar:"E2O" },
-  { id:"cs",          name:"Customer Service", manager:"MALSCHALCK Jessica",    headcount:6,  pillar:"O2C" },
-  { id:"direction",   name:"Direction",        manager:"COLON Thibault",        headcount:6,  pillar:"E2O" },
-  { id:"dosettes",    name:"Dosettes",         manager:"Responsables atelier",  headcount:44, pillar:"P2S" },
-  { id:"entretien",   name:"Entretien",        manager:"HENNAUT Cédric",        headcount:21, pillar:"E2O" },
-  { id:"enviro",      name:"Environnement",    manager:"SNEESSENS Martin",      headcount:1,  pillar:"E2O" },
-  { id:"expedition",  name:"Expédition",       manager:"DEWAELE Alain",         headcount:16, pillar:"O2C" },
-  { id:"facility",    name:"Facility",         manager:"GODART Olivier",        headcount:0,  pillar:"E2O" },
-  { id:"it",          name:"IT",               manager:"DESPONTIN Audric",      headcount:2,  pillar:"E2O" },
-  { id:"labelling",   name:"Labelling",        manager:"COLAS Germain",         headcount:3,  pillar:"O2C" },
-  { id:"logistique",  name:"Logistique",       manager:"RAFFA Giulia",          headcount:5,  pillar:"O2C" },
-  { id:"manager",     name:"Manager",          manager:"WARNANT Hervé",         headcount:8,  pillar:"E2O" },
-  { id:"packaging",   name:"Packaging",        manager:"DEWAELE Alain",         headcount:0,  pillar:"P2S" },
-  { id:"pesees",      name:"Pesées",           manager:"COMPERE Anaïs",         headcount:24, pillar:"P2S" },
-  { id:"planning",    name:"Planning",         manager:"LESSIRE Olivier",       headcount:4,  pillar:"P2S" },
-  { id:"production",  name:"Production",       manager:"HENNAUT Cédric",        headcount:92, pillar:"P2S" },
-  { id:"qualite",     name:"Qualité",          manager:"SNEESSENS Martin",      headcount:5,  pillar:"P2S" },
-  { id:"rd",          name:"R&D",              manager:"VERCRUYSSE Ellen",      headcount:3,  pillar:"P2S" },
-  { id:"rh",          name:"RH",               manager:"HERBELIN Laurence",     headcount:5,  pillar:"E2O" },
-  { id:"reception",   name:"Réception",        manager:"DEWAELE Alain",         headcount:10, pillar:"P2S" },
-  { id:"supplychain", name:"Supply Chain",     manager:"JONET Olivier",         headcount:1,  pillar:"P2S" },
-  { id:"securite",    name:"Sécurité",         manager:"DECHAMBRE Bernard",     headcount:2,  pillar:"E2O" },
-  { id:"technique",   name:"Technique",        manager:"GREGOIRE Frédéric",     headcount:12, pillar:"E2O" },
+  { id:"sales_mktg",  name:"Sales & Marketing",  manager:"Anja",                    headcount:0, pillar:"O2C", keyuser:"" },
+  { id:"supplychain", name:"Supply Chain",        manager:"JONET Olivier",           headcount:0, pillar:"P2S", keyuser:"" },
+  { id:"production",  name:"Production",          manager:"HENNAUT Cédric",          headcount:0, pillar:"P2S", keyuser:"" },
+  { id:"rd",          name:"R&D",                 manager:"VERCRUYSSE Ellen",        headcount:0, pillar:"P2S", keyuser:"" },
+  { id:"product_mgr", name:"Product Manager",     manager:"Pierre",                  headcount:0, pillar:"O2C", keyuser:"" },
+  { id:"technique",   name:"Technique",           manager:"GREGOIRE Frédéric",       headcount:0, pillar:"E2O", keyuser:"" },
+  { id:"qualite",     name:"Qualité",             manager:"SNEESSENS Martin",        headcount:0, pillar:"P2S", keyuser:"" },
+  { id:"sipp",        name:"SIPP",                manager:"DECHAMBRE Bernard",       headcount:0, pillar:"E2O", keyuser:"" },
+  { id:"hr",          name:"HR",                  manager:"WARNANT Hervé",           headcount:0, pillar:"E2O", keyuser:"" },
+  { id:"finance",     name:"Finance",             manager:"TONGLET Justine",         headcount:0, pillar:"E2O", keyuser:"" },
+  { id:"achats",      name:"Achats",              manager:"DEWINGAERDEN Gauthier",   headcount:0, pillar:"P2S", keyuser:"" },
+];
+
+const DEFAULT_SERVICES = [
+  { id:"SVC001", name:"Customer Service",        deptId:"sales_mktg" },
+  { id:"SVC002", name:"Marketing",               deptId:"sales_mktg" },
+  { id:"SVC003", name:"Dispatch",                deptId:"supplychain" },
+  { id:"SVC004", name:"Planning",                deptId:"supplychain" },
+  { id:"SVC005", name:"Receipts",                deptId:"supplychain" },
+  { id:"SVC006", name:"Warehouse - Expédition",  deptId:"supplychain" },
+  { id:"SVC007", name:"Warehouse - Réception",   deptId:"supplychain" },
+  { id:"SVC008", name:"Warehouse - PM",          deptId:"supplychain" },
+  { id:"SVC009", name:"Warehouse - Labelling",   deptId:"supplychain" },
+  { id:"SVC010", name:"Warehouse - Logistique",  deptId:"supplychain" },
+  { id:"SVC011", name:"Prod",                    deptId:"production" },
+  { id:"SVC012", name:"BIB",                     deptId:"production" },
+  { id:"SVC013", name:"Dosette",                 deptId:"production" },
+  { id:"SVC014", name:"R&D",                     deptId:"rd" },
+  { id:"SVC015", name:"Product Manager",         deptId:"product_mgr" },
+  { id:"SVC016", name:"Maintenance & Facility",  deptId:"technique" },
+  { id:"SVC017", name:"Qualité",                 deptId:"qualite" },
+  { id:"SVC018", name:"Environnement",           deptId:"qualite" },
+  { id:"SVC019", name:"SIPP",                    deptId:"sipp" },
+  { id:"SVC020", name:"Soft",                    deptId:"hr" },
+  { id:"SVC021", name:"Hard",                    deptId:"hr" },
+  { id:"SVC022", name:"Comptabilité",            deptId:"finance" },
+  { id:"SVC023", name:"Contrôle de gestion",     deptId:"finance" },
+  { id:"SVC024", name:"Achats",                  deptId:"achats" },
 ];
 const DEFAULT_TASK_TYPES = [
   { id:"TT01", name:"Day-to-Day",   color:"#00A23A", icon:"🔄" },
@@ -74,10 +87,10 @@ const DEFAULT_TASK_TYPES = [
   { id:"TT04", name:"Projet",       color:"#9b59b6", icon:"🚀" },
 ];
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
-const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
-const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.8.0";
-const APP_BUILD = "10/03/2026 21:30";
+const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
+const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
+const APP_VERSION = "v3.9.0";
+const APP_BUILD = "10/03/2026 22:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -364,7 +377,7 @@ function ParentTaskSelector({ value, onChange, parentProcesses, currentTaskId })
 }
 
 // ── Task Modal (replaces Saisie tab) ─────────────────────────────────────────
-function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, parentProcesses, onAddProcess, employees, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
+function TaskModal({ editTask, departments, services, softwares, onSoftwareAdded, taskTypes, tasks, parentProcesses, onAddProcess, employees, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
   const isNew = !editTask;
   const DESC_TEMPLATE = "Objectif du process :\n\nDéclencheur :\n\nÉtapes principales :\n\nOutput visé :";
   const [form, setForm] = useState(() => {
@@ -421,6 +434,12 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
                       {departments.filter(d=>d.pillar===pk).map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                     </optgroup>
                   ))}
+                </select>
+              </div>
+              <div><label style={LB}>🔀 Service</label>
+                <select style={IS} value={form.ServiceID||""} onChange={e=>setForm(f=>({...f,ServiceID:e.target.value}))}>
+                  <option value="">— Tous / Aucun —</option>
+                  {services.filter(s=>!form.DeptID||s.deptId===form.DeptID).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div><label style={LB}>📝 Nom de le processus *</label><input style={IS} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
@@ -589,6 +608,7 @@ function DeptModal({ dept, onSave, onClose }) {
           <div><label style={LS}>Manager</label><input style={IS} value={form.manager} onChange={e=>setForm(f=>({...f,manager:e.target.value}))}/></div>
           <div><label style={LS}>Nombre d\'employés</label><input style={IS} type="number" min="0" value={form.headcount} onChange={e=>setForm(f=>({...f,headcount:parseInt(e.target.value)||0}))}/></div>
           <div><label style={LS}>Pilier *</label><select style={IS} value={form.pillar} onChange={e=>setForm(f=>({...f,pillar:e.target.value}))}>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
+          <div><label style={LS}>Key User</label><input style={IS} value={form.keyuser||""} placeholder="Nom du key user…" onChange={e=>setForm(f=>({...f,keyuser:e.target.value}))}/></div>
         </div>
         <div style={{display:"flex",gap:10,marginTop:20,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"10px 18px",cursor:"pointer",fontWeight:600}}>Annuler</button>
@@ -864,6 +884,8 @@ export default function App() {
   const [tasks,setTasks]=useState([]);
   const [softwares,setSoftwares]=useState(DEFAULT_SOFTWARES);
   const [departments,setDepartments]=useState(DEFAULT_DEPARTMENTS);
+  const [services,setServices]=useState(DEFAULT_SERVICES);
+  const [filterService,setFilterService]=useState("ALL");
   const [taskTypes,setTaskTypes]=useState(DEFAULT_TASK_TYPES);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -945,9 +967,10 @@ export default function App() {
   const filteredTasks=useMemo(()=>tasks.filter(t=>
     (filterPillar==="ALL"||departments.find(d=>d.id===t.DeptID)?.pillar===filterPillar)&&
     (filterDept==="ALL"||t.DeptID===filterDept)&&
+    (filterService==="ALL"||t.ServiceID===filterService)&&
     (filterType==="ALL"||t.TaskType===filterType)&&
     (filterParent==="ALL"||t.ParentID===filterParent)
-  ),[tasks,departments,filterPillar,filterDept,filterType,filterParent]);
+  ),[tasks,departments,services,filterPillar,filterDept,filterType,filterParent,filterService]);
   const mermaidCode=useMemo(()=>mermaidMode==="global"?generateMermaid(tasks,departments):generateMermaidPillar(tasks,departments,mermaidMode),[tasks,departments,mermaidMode]);
   const totalHC=departments.reduce((a,b)=>a+b.headcount,0);
   const deptsByPillar=(pk)=>departments.filter(d=>d.pillar===pk);
@@ -1083,16 +1106,17 @@ export default function App() {
               </div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Pilier</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterPillar!=="ALL"?"28px":undefined}} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select>{filterPillar!=="ALL"&&<button onClick={()=>setFilterPillar("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Département</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterDept!=="ALL"?"28px":undefined}} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>{filterDept!=="ALL"&&<button onClick={()=>setFilterDept("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
+              <div style={{flex:1,minWidth:110}}><label style={S.label}>Service</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterService!=="ALL"?"28px":undefined}} value={filterService} onChange={e=>setFilterService(e.target.value)}><option value="ALL">Tous</option>{services.filter(s=>filterDept==="ALL"||s.deptId===filterDept).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>{filterService!=="ALL"&&<button onClick={()=>setFilterService("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Type</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterType!=="ALL"?"28px":undefined}} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select>{filterType!=="ALL"&&<button onClick={()=>setFilterType("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
               <div style={{flex:1,minWidth:110}}><label style={S.label}>Processus</label><div style={{position:"relative",display:"flex",alignItems:"center"}}><select style={{...S.select,paddingRight:filterParent!=="ALL"?"28px":undefined}} value={filterParent} onChange={e=>setFilterParent(e.target.value)}><option value="ALL">Tous</option>{parentProcesses.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>{filterParent!=="ALL"&&<button onClick={()=>setFilterParent("ALL")} style={{position:"absolute",right:22,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:15,padding:0,lineHeight:1,fontWeight:700}}>×</button>}</div></div>
-              {(filterPillar!=="ALL"||filterDept!=="ALL"||filterType!=="ALL"||filterParent!=="ALL")&&(<div style={{display:"flex",alignItems:"flex-end"}}><button onClick={()=>{setFilterPillar("ALL");setFilterDept("ALL");setFilterType("ALL");setFilterParent("ALL");}} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 18px",background:"#fdecea",border:"2px solid #D51317",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,color:"#D51317",height:42,whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(213,19,23,0.2)"}}>✕ Tout effacer</button></div>)}<div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
+              {(filterPillar!=="ALL"||filterDept!=="ALL"||filterService!=="ALL"||filterType!=="ALL"||filterParent!=="ALL")&&(<div style={{display:"flex",alignItems:"flex-end"}}><button onClick={()=>{setFilterPillar("ALL");setFilterDept("ALL");setFilterService("ALL");setFilterType("ALL");setFilterParent("ALL");}} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 18px",background:"#fdecea",border:"2px solid #D51317",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,color:"#D51317",height:42,whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(213,19,23,0.2)"}}>✕ Tout effacer</button></div>)}<div style={{display:"flex",alignItems:"flex-end"}}><div style={{padding:"10px 14px",background:"rgba(0,162,58,0.1)",borderRadius:8,fontSize:13,color:BRAND.green,fontWeight:700,border:`1px solid ${BRAND.green}40`,whiteSpace:"nowrap"}}>{filteredTasks.length} processus</div></div>
             </div>
             {loading?<div style={{...S.card,textAlign:"center",padding:48,color:"#aaa"}}><Spinner/>Chargement…</div>
             :filteredTasks.length===0?<div style={{...S.card,textAlign:"center",padding:48}}><img src={IMG_FLAMES} alt="" style={{height:80,marginBottom:12}}/><div style={{fontWeight:600,color:"#999",marginBottom:16}}>Aucun processus — clique sur le bouton rouge !</div><button onClick={()=>setTaskModal("new")} style={{...S.btn(BRAND.red),fontSize:14}}>➕ Ajouter un processus</button></div>
             :(
               <div style={{...S.card,padding:0,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>{["Pilier","Département","Processus","Statut","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["Pilier","Département","Service","Processus","Statut","Parent","Type","Outils digitaux","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
                       const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
@@ -1107,6 +1131,7 @@ export default function App() {
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
+                        <td style={S.td}>{(()=>{const svc=services.find(s=>s.id===t.ServiceID);return svc?<span style={{background:"#f0f4ff",color:"#005CA9",border:"1px solid #005CA920",borderRadius:8,padding:"2px 8px",fontSize:11,fontWeight:600}}>{svc.name}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})()}</td>
                         <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
                         <td style={S.td}>{t.Validated?<span style={{background:"#e6f7ed",color:"#00A23A",border:"1px solid #00A23A40",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>✅ Validé</span>:<span style={{background:"#fff3e0",color:"#EB6011",border:"1px solid #EB601140",borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⏳ En cours</span>}</td>
                         <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
@@ -1211,7 +1236,7 @@ export default function App() {
         {tab==="settings"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-              {[["departments","🏢 Départements"],["softwares","🛠️ Outils digitaux"],["types","🏷️ Types de processus"],["processes","🔗 Processus parents"],["employees","👤 Employés"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
+              {[["departments","🏢 Départements"],["services","🔀 Services"],["softwares","🛠️ Outils digitaux"],["types","🏷️ Types de processus"],["processes","🔗 Processus parents"],["employees","👤 Employés"],["sharepoint","☁️ SharePoint"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setSettingsTab(k)} style={{padding:"8px 18px",borderRadius:8,border:`2px solid ${settingsTab===k?BRAND.blue:"#ddd"}`,background:settingsTab===k?"rgba(0,92,169,0.08)":"rgba(255,255,255,0.8)",fontWeight:settingsTab===k?700:400,cursor:"pointer",fontSize:13,color:settingsTab===k?BRAND.blue:"#555"}}>{l}</button>
               ))}
               <div style={{flex:1}}/>
@@ -1220,7 +1245,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
@@ -1239,10 +1264,35 @@ export default function App() {
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr>{["Pilier","Nom","Manager","Employés","Tâches",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
-                    <tbody>{departments.map(d=>{const tc=tasksByDept(d.id).length;return <tr key={d.id}><td style={S.td}><Badge pillar={d.pillar}/></td><td style={S.td}><strong>{d.name}</strong></td><td style={S.td}>{d.manager||<span style={{color:"#ccc"}}>—</span>}</td><td style={S.td}><span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span> <span style={{fontSize:11,color:"#aaa"}}>{d.headcount||0}</span></td><td style={S.td}>{tc>0?<span style={S.pill(BRAND.green,"#e6f7ed")}>{tc} tâche{tc>1?"s":""}</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td><td style={S.td}><button onClick={()=>setDeptModal(d)} style={{background:"#f0f0f8",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer",marginRight:4}}>✏️</button><button onClick={()=>deleteDept(d.id)} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td></tr>;})}
+                    <tbody>{departments.map(d=>{const tc=tasksByDept(d.id).length;const svcs=services.filter(s=>s.deptId===d.id);return <tr key={d.id}><td style={S.td}><Badge pillar={d.pillar}/></td><td style={S.td}><strong>{d.name}</strong></td><td style={S.td}>{d.manager||<span style={{color:"#ccc"}}>—</span>}</td><td style={S.td}>{d.keyuser?<strong style={{fontSize:12}}>{d.keyuser}</strong>:<span style={{color:"#ccc"}}>—</span>}</td><td style={S.td}>{svcs.length>0?<span style={{fontSize:11,color:"#005CA9",fontWeight:600}}>{svcs.length} svc{svcs.length>1?"s":""}</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td><td style={S.td}><span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span> <span style={{fontSize:11,color:"#aaa"}}>{d.headcount||0}</span></td><td style={S.td}>{tc>0?<span style={S.pill(BRAND.green,"#e6f7ed")}>{tc} tâche{tc>1?"s":""}</span>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td><td style={S.td}><button onClick={()=>setDeptModal(d)} style={{background:"#f0f0f8",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer",marginRight:4}}>✏️</button><button onClick={()=>deleteDept(d.id)} style={{background:"#fdecea",border:"none",borderRadius:5,padding:"5px 8px",cursor:"pointer"}}>🗑️</button></td></tr>;})}
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {settingsTab==="services"&&(
+              <div>
+                {departments.map(d=>{
+                  const dsvcs=services.filter(s=>s.deptId===d.id);
+                  const pv=PILLARS[d.pillar];
+                  return <div key={d.id} style={{...S.card,borderLeft:`4px solid ${pv?.color||"#ccc"}`,marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:dsvcs.length>0?10:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <Badge pillar={d.pillar}/>
+                        <strong style={{fontSize:14}}>{d.name}</strong>
+                        <span style={{fontSize:11,color:"#aaa"}}>{dsvcs.length} service{dsvcs.length!==1?"s":""}</span>
+                      </div>
+                      <button onClick={()=>{const name=window.prompt(`Nouveau service pour "${d.name}" :`);if(name&&name.trim()){setServices(p=>[...p,{id:"SVC"+Date.now(),name:name.trim(),deptId:d.id}]);showSync("ok","✅ Service ajouté !");}}} style={{...S.btn("#005CA9"),padding:"5px 12px",fontSize:12}}>➕ Ajouter</button>
+                    </div>
+                    {dsvcs.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {dsvcs.map(s=><span key={s.id} style={{display:"inline-flex",alignItems:"center",gap:5,background:"#f0f4ff",border:"1px solid #005CA920",borderRadius:20,padding:"4px 10px",fontSize:12}}>
+                        <span style={{fontWeight:600,color:"#005CA9"}}>{s.name}</span>
+                        <button onClick={()=>{if(window.confirm(`Supprimer "${s.name}" ?`))setServices(p=>p.filter(x=>x.id!==s.id));}} style={{background:"none",border:"none",color:"#aaa",cursor:"pointer",fontSize:13,padding:0,lineHeight:1}}>×</button>
+                      </span>)}
+                    </div>}
+                  </div>;
+                })}
               </div>
             )}
 
@@ -1387,6 +1437,7 @@ export default function App() {
         <TaskModal
           editTask={taskModal==="new"?null:taskModal}
           departments={departments}
+          services={services}
           softwares={softwares}
           onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])}
           taskTypes={taskTypes}
