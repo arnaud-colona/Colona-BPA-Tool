@@ -15,7 +15,7 @@ function TooltipPortal({ children }) {
 
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxhf3YWW1k2kJpM_0bvk_q_9g_CDay1RgzbJvmjy7WOe-qHIUY_nhC8MRE6WjcP98vfxA/exec";
-const IMG_LOGO   = "https://i.imgur.com/mc6kH1m.jpg";
+const IMG_LOGO   = "https://i.postimg.cc/sxG70mPb/Colona-logo-sans-baseline-2025-09-2025.png";
 const IMG_FRITE  = "";
 const IMG_PIMENT = "";
 const IMG_OIGNON = "";
@@ -76,8 +76,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.7.0";
-const APP_BUILD = "10/03/2026 20:30";
+const APP_VERSION = "v3.8.0";
+const APP_BUILD = "10/03/2026 21:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -1139,10 +1139,10 @@ export default function App() {
                   <div style={{textAlign:"right"}}><div style={{...S.title,fontSize:28,color:pv.color}}>{ptasks.length}</div><div style={{fontSize:11,color:"#aaa"}}>tâches</div></div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                  {depts.map(d=>{const ts=tasksByDept(d.id);return <div key={d.id} style={{padding:"10px 14px",background:pv.bg,borderRadius:8,border:`1px solid ${pv.color}30`}}>
+                  {depts.map(d=>{const ts=tasksByDept(d.id);return <div key={d.id} onClick={()=>{setFilterDept(d.id);setTab("tasks");}} style={{padding:"10px 14px",background:pv.bg,borderRadius:8,border:`1px solid ${pv.color}30`,cursor:"pointer",transition:"box-shadow 0.15s"}} onMouseEnter={e=>e.currentTarget.style.boxShadow=`0 4px 16px ${pv.color}40`} onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13}}>{d.name}</div><span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span></div>
                     <div style={{fontSize:11,color:"#888",marginTop:2}}>{d.manager}</div>
-                    {ts.length>0&&<div style={{marginTop:8}}>{ts.map(t=><TaskCard key={t.TaskID} task={t} departments={departments} taskTypes={taskTypes} onEdit={updated=>setTasks(p=>p.map(x=>x.TaskID===updated.TaskID?updated:x))} onNavigate={()=>{setFilterDept(t.DeptID);setTab("tasks");setTaskModal(t);}}/>)}</div>}
+                    {ts.length>0&&<div style={{marginTop:8}} onClick={e=>e.stopPropagation()}>{ts.map(t=><TaskCard key={t.TaskID} task={t} departments={departments} taskTypes={taskTypes} onEdit={updated=>setTasks(p=>p.map(x=>x.TaskID===updated.TaskID?updated:x))} onNavigate={()=>{setFilterDept(t.DeptID);setTab("tasks");setTaskModal(t);}}/>)}</div>}
                   </div>;})}
                 </div>
               </div>;
@@ -1220,7 +1220,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
