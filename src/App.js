@@ -363,6 +363,17 @@ function DeptModal({ dept, onSave, onClose }) {
   );
 }
 
+// ── Favicon setter ──────────────────────────────────────────────────────────
+function FaviconSetter({ img }) {
+  useEffect(()=>{
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+    link.href = img;
+    document.title = "Colona BPA";
+  },[]);
+  return null;
+}
+
 // ══ MAIN APP ══════════════════════════════════════════════════════════════════
 export default function App() {
   const [tab,setTab]=useState("overview");
@@ -480,6 +491,7 @@ export default function App() {
   return (
     <div style={S.app}>
       <style>{CSS}</style>
+      <FaviconSetter img={IMG_BURGER}/>
 
       {/* ── HEADER ── */}
       <div style={S.header}>
@@ -508,7 +520,7 @@ export default function App() {
 
       {/* ── TABS — sans "Saisie" ── */}
       <div style={S.tabs}>
-        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🗂️ Taxonomie"],["mermaid","📊 Mermaid"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
+        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🗺️ Cartographie"],["mermaid","📊 Mermaid"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
           <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -557,7 +569,15 @@ export default function App() {
         {/* ══ TÂCHES ══ */}
         {tab==="tasks"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
+              <div>
+                <button onClick={()=>setTaskModal("new")}
+                  style={{display:"flex",alignItems:"center",gap:8,background:`linear-gradient(135deg,${BRAND.red},#c0100e)`,color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"Roboto,sans-serif",boxShadow:"0 4px 14px rgba(213,19,23,0.35)",height:42}}
+                  onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(213,19,23,0.55)"}
+                  onMouseLeave={e=>e.currentTarget.style.boxShadow="0 4px 14px rgba(213,19,23,0.35)"}>
+                  <span style={{fontSize:20,lineHeight:1}}>+</span> Nouvelle tâche
+                </button>
+              </div>
               <div style={{flex:1,minWidth:130}}><label style={S.label}>Pilier</label><select style={S.select} value={filterPillar} onChange={e=>setFilterPillar(e.target.value)}><option value="ALL">Tous</option>{Object.entries(PILLARS).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}</select></div>
               <div style={{flex:1,minWidth:130}}><label style={S.label}>Département</label><select style={S.select} value={filterDept} onChange={e=>setFilterDept(e.target.value)}><option value="ALL">Tous</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
               <div style={{flex:1,minWidth:130}}><label style={S.label}>Type</label><select style={S.select} value={filterType} onChange={e=>setFilterType(e.target.value)}><option value="ALL">Tous</option>{taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}</select></div>
@@ -597,7 +617,7 @@ export default function App() {
         {/* ══ TAXONOMIE ══ */}
         {tab==="taxonomy"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>TAXONOMIE — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
+            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>CARTOGRAPHIE — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
             {Object.entries(PILLARS).map(([pk,pv])=>{
               const depts=deptsByPillar(pk);
               const ptasks=tasks.filter(t=>depts.find(d=>d.id===t.DeptID));
@@ -771,16 +791,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Floating "+ Tâche" button (visible on Tâches tab) ── */}
-      {tab==="tasks"&&(
-        <button onClick={()=>setTaskModal("new")}
-          style={{position:"fixed",bottom:32,right:32,width:64,height:64,borderRadius:"50%",background:`linear-gradient(135deg,${BRAND.red},#ff4444)`,color:"#fff",border:"none",boxShadow:"0 6px 20px rgba(213,19,23,0.5)",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:999,transition:"transform 0.15s ease, box-shadow 0.15s ease",fontSize:22}}
-          onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.1)";e.currentTarget.style.boxShadow="0 8px 28px rgba(213,19,23,0.65)";}}
-          onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 6px 20px rgba(213,19,23,0.5)";}}
-          title="Ajouter une tâche">
-          +
-        </button>
-      )}
+
 
       <div style={{height:8,background:BRAND.red}}/>
 
