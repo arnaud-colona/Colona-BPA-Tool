@@ -89,8 +89,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.10.1";
-const APP_BUILD = "11/03/2026 00:15";
+const APP_VERSION = "v3.10.2";
+const APP_BUILD = "11/03/2026 00:30";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -800,10 +800,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
           title="Cliquer pour ouvrir l'édition de ce processus">
           ▸ {task.TaskName}
         </span>
-        <button
-          onClick={e => { e.stopPropagation(); setForm({...task}); setEditing(true); setHover(false); }}
-          style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#bbb", padding:"0 2px", flexShrink:0, lineHeight:1 }}
-          title="Modifier ce processus">✏️</button>
+
       </div>
 
       {/* Hover preview tooltip — rendered via Portal to escape overflow/transform */}
@@ -825,7 +822,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
           {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:5, borderTop:"1px solid #f0f0f0", paddingTop:5 }}>📝 {task.Notes}</div>}
           {task.DocURL && <div style={{ fontSize:11, color:"#0078d4" }}>📎 Document lié</div>}
           <div style={{ fontSize:10, color:"#bbb", marginTop:7, paddingTop:5, borderTop:"1px solid #f5f5f5", display:"flex", gap:10 }}>
-            <span>🖊 ✏️ pour modifier</span>
+            <span>🖊 Cliquer pour modifier</span>
             <span>🔗 clic nom → éditer</span>
           </div>
         </div>
@@ -1247,7 +1244,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
