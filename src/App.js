@@ -50,7 +50,7 @@ const DEFAULT_TASK_TYPES = [
   { id:"TT04", name:"Projet",       color:"#9b59b6", icon:"🚀" },
 ];
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
-const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", CreatedAt:"", Version:"1" };
+const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
@@ -269,8 +269,81 @@ function MermaidBlock({ code }) {
   );
 }
 
+
+// ── Parent Task Autocomplete ──────────────────────────────────────────────────
+function ParentTaskSelector({ value, onChange, tasks, currentTaskId }) {
+  const [input, setInput] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const selectedTask = tasks.find(t => t.TaskID === value);
+
+  useEffect(() => {
+    if (selectedTask) setInput(selectedTask.TaskName);
+    else setInput("");
+  }, [value]);
+
+  const filtered = input.length >= 1
+    ? tasks.filter(t =>
+        t.TaskID !== currentTaskId &&
+        t.TaskName.toLowerCase().includes(input.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const clear = () => { onChange(""); setInput(""); setOpen(false); };
+
+  return (
+    <div style={{ position:"relative" }}>
+      {value && selectedTask ? (
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", background:"#fff3eb", border:"1.5px solid #EB6011", borderRadius:7 }}>
+          <span style={{ fontSize:14 }}>🔗</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:"#EB6011" }}>{selectedTask.TaskName}</div>
+            <div style={{ fontSize:11, color:"#aaa" }}>Tâche parent · ID: {selectedTask.TaskID}</div>
+          </div>
+          <button onClick={clear} style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:16 }}>✕</button>
+        </div>
+      ) : (
+        <div>
+          <input
+            value={input}
+            onChange={e => { setInput(e.target.value); setOpen(true); onChange(""); }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 200)}
+            placeholder="Rechercher une tâche parent… (laisser vide = tâche racine)"
+            style={{ width:"100%", padding:"9px 12px", border:"1.5px solid #ddd", borderRadius:7, fontSize:13, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" }}
+          />
+          {open && filtered.length > 0 && (
+            <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#fff", border:"1.5px solid #EB6011", borderRadius:7, boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:500, maxHeight:240, overflowY:"auto", marginTop:3 }}>
+              {filtered.map(t => {
+                const dept = t.DeptID;
+                return (
+                  <div key={t.TaskID} onMouseDown={() => { onChange(t.TaskID); setInput(t.TaskName); setOpen(false); }}
+                    style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid #f5f5f5", display:"flex", alignItems:"center", gap:10 }}
+                    onMouseEnter={e => e.currentTarget.style.background="#fff3eb"}
+                    onMouseLeave={e => e.currentTarget.style.background="#fff"}>
+                    <span style={{ fontSize:14 }}>🔗</span>
+                    <div>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{t.TaskName}</div>
+                      <div style={{ fontSize:11, color:"#aaa" }}>Dept: {dept} · {t.Frequency}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {open && input.length >= 1 && filtered.length === 0 && (
+            <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#fff", border:"1.5px solid #ddd", borderRadius:7, padding:"12px 14px", fontSize:12, color:"#aaa", zIndex:500, marginTop:3 }}>
+              Aucune tâche trouvée pour "{input}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Task Modal (replaces Saisie tab) ─────────────────────────────────────────
-function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
+function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskTypes, tasks, onSave, onClose, saving, showSync, msalConfig, msToken, onToken }) {
   const [form, setForm] = useState(editTask ? {...editTask} : {...TASK_TEMPLATE});
   const S={
     overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"},
@@ -323,6 +396,10 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
                 })}
               </div>
               {form.Deps&&<div style={{fontSize:12,color:BRAND.green,marginTop:6}}>✓ {form.Deps.split(",").filter(Boolean).length} dépendance(s)</div>}
+            </div>
+            <div style={{gridColumn:"1 / -1"}}>
+              <label style={S.label}>🔗 Tâche parent (optionnel — pour regrouper dans un processus)</label>
+              <ParentTaskSelector value={form.ParentID||""} onChange={v=>setForm(f=>({...f,ParentID:v}))} tasks={tasks.filter(t=>t.TaskID!==(editTask?.TaskID||""))} currentTaskId={editTask?.TaskID||""}/>
             </div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💬 Notes</label><input style={S.input} placeholder="Volume, contraintes…" value={form.Notes} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
           </div>
@@ -520,7 +597,7 @@ export default function App() {
 
       {/* ── TABS — sans "Saisie" ── */}
       <div style={S.tabs}>
-        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🗺️ Cartographie"],["mermaid","📊 Mermaid"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
+        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🧠 Mindmap"],["mermaid","📊 Mermaid"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
           <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -588,7 +665,7 @@ export default function App() {
             :(
               <div style={{...S.card,padding:0,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>{["Pilier","Département","Tâche","Type","Logiciels","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["Pilier","Département","Tâche","Parent","Type","Logiciels","Fréquence","Doc","Dépendances",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {filteredTasks.map(t=>{
                       const dept=departments.find(d=>d.id===t.DeptID);if(!dept)return null;
@@ -599,6 +676,7 @@ export default function App() {
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
                         <td style={S.td}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#aaa"}}>{t.Notes}</div>}</td>
+                        <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
                         <td style={S.td}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
                         <td style={S.td}><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{sws.length>0?sws.map(s=><span key={s} style={S.pill(BRAND.blue,"#e6eef8")}>{s}</span>):<span style={{color:"#ccc"}}>—</span>}</div></td>
                         <td style={S.td}><span style={S.pill("#8e44ad","#f5eef8")}>{t.Frequency}</span></td>
@@ -617,7 +695,7 @@ export default function App() {
         {/* ══ TAXONOMIE ══ */}
         {tab==="taxonomy"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>CARTOGRAPHIE — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
+            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>🧠 MINDMAP — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
             {Object.entries(PILLARS).map(([pk,pv])=>{
               const depts=deptsByPillar(pk);
               const ptasks=tasks.filter(t=>depts.find(d=>d.id===t.DeptID));
@@ -796,7 +874,7 @@ export default function App() {
       <div style={{height:8,background:BRAND.red}}/>
 
       {/* ── Modals ── */}
-      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
+      {taskModal&&<TaskModal editTask={taskModal==="new"?null:taskModal} departments={departments} softwares={softwares} onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])} taskTypes={taskTypes} tasks={tasks} onSave={saveTask} onClose={()=>setTaskModal(null)} saving={saving} showSync={showSync} msalConfig={msalConfig} msToken={msToken} onToken={(tok)=>setMsToken(tok)}/>}
       {deptModal&&<DeptModal dept={deptModal==="new"?null:deptModal} onSave={saveDept} onClose={()=>setDeptModal(null)}/>}
     </div>
   );
