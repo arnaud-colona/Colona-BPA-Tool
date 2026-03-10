@@ -76,8 +76,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v3.2.0";
-const APP_BUILD = "10/03/2026 16:11";
+const APP_VERSION = "v3.5.0";
+const APP_BUILD = "10/03/2026 17:55";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -458,7 +458,7 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
               <div><label style={LB}>💬 Description du processus</label>
                 <textarea value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))} rows={8}
                   style={{...IL,resize:"vertical",minHeight:180,lineHeight:1.7,display:"block"}}
-                  placeholder={"Objectif du process :\n\nDéclencheur :\n\nÉtapes principales :\n\nOutput visé :"}/>
+                  />
               </div>
               <div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -1036,7 +1036,7 @@ export default function App() {
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
               {Object.entries(PILLARS).map(([pk,pv])=>(
-                <div key={pk} style={{background:pv.color,borderRadius:14,padding:"20px 24px",color:"#fff",boxShadow:`0 6px 24px ${pv.color}60`,position:"relative",overflow:"hidden"}}>
+                <div key={pk} onClick={()=>{setFilterPillar(pk);setTab("tasks");}} style={{background:pv.color,borderRadius:14,padding:"20px 24px",color:"#fff",boxShadow:`0 6px 24px ${pv.color}60`,position:"relative",overflow:"hidden",cursor:"pointer"}}>
                   <div style={{position:"absolute",right:-10,bottom:-10,opacity:0.12,fontSize:80}}>{pv.icon}</div>
                   <div style={{...S.title,fontSize:16,marginBottom:4}}>{pv.icon} {pv.label}</div>
                   <div style={{fontSize:12,opacity:0.85,marginBottom:14}}>{pv.desc}</div>
@@ -1055,7 +1055,7 @@ export default function App() {
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:8}}>
                 {departments.map(d=>(
-                  <div key={d.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"rgba(255,255,255,0.7)",borderRadius:8,border:`1px solid ${PILLARS[d.pillar]?.color||"#ccc"}20`}}>
+                  <div key={d.id} onClick={()=>{setFilterDept(d.id);setTab("tasks");}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"rgba(255,255,255,0.7)",borderRadius:8,border:`1px solid ${PILLARS[d.pillar]?.color||"#ccc"}20`,cursor:"pointer"}}>
                     <Badge pillar={d.pillar}/>
                     <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.name}</div><div style={{fontSize:11,color:"#999",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.manager}</div></div>
                     <span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span>
@@ -1107,7 +1107,7 @@ export default function App() {
                         onMouseMove={e=>setHoverPos({x:e.clientX,y:e.clientY})}>
                         <td style={S.td}><Badge pillar={dept.pillar}/></td>
                         <td style={S.td}><strong>{dept.name}</strong></td>
-                        <td style={S.td}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
+                        <td style={{...S.td,cursor:"pointer"}} onClick={()=>setTaskModal(t)}><strong>{t.TaskName}</strong>{t.Notes&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{t.Notes}</div>}</td>
                         <td style={S.td}>{t.ParentID?(()=>{const p=tasks.find(x=>x.TaskID===t.ParentID);return p?<span style={{background:"#fff3eb",color:"#EB6011",border:"1px solid #EB601130",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:600}}>🔗 {p.TaskName.length>20?p.TaskName.slice(0,18)+"…":p.TaskName}</span>:<span style={{color:"#ccc",fontSize:11}}>—</span>;})():<span style={{color:"#ccc"}}>—</span>}</td>
                         <td style={S.td}><TaskTypeBadge typeId={t.TaskType} taskTypes={taskTypes}/></td>
                         <td style={S.td}><div style={{display:"flex",flexWrap:"wrap",gap:3}}>{sws.length>0?sws.map(s=><span key={s} style={S.pill(BRAND.blue,"#e6eef8")}>{s}</span>):<span style={{color:"#ccc"}}>—</span>}</div></td>
