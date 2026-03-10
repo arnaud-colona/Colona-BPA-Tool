@@ -890,6 +890,8 @@ export default function App() {
   const [odooUrl,setOdooUrl]=useState("");
   const [newProcessName,setNewProcessName]=useState("");
   const [showUserPicker,setShowUserPicker]=useState(false);
+  const [userPickerPos,setUserPickerPos]=useState({top:0,right:0});
+  const userBtnRef=useRef(null);
   const [odooLoading,setOdooLoading]=useState(false);
   const [versionLog,setVersionLog]=useState([{v:1,ts:new Date().toLocaleString("fr-BE"),desc:"Connexion à Google Sheets…"}]);
 
@@ -1005,22 +1007,11 @@ export default function App() {
               <div style={{...S.title,color:"#FDCA00",fontSize:20}}>{loading?<><Spinner/> Chargement…</>:tasks.length+" PROCESSUS"}</div>
               <div style={{color:"rgba(255,255,255,0.5)",fontSize:11}}>{loading?"Connexion…":"✅ Sync Google Sheets"}</div>
               <div style={{position:"relative"}}>
-                <button onClick={()=>setShowUserPicker(v=>!v)} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"5px 14px 5px 10px",border:"none",cursor:"pointer",color:"#fff"}}>
+                <button ref={userBtnRef} onClick={()=>{if(!showUserPicker){const r=userBtnRef.current.getBoundingClientRect();setUserPickerPos({top:r.bottom+6,right:window.innerWidth-r.right});}setShowUserPicker(v=>!v);}} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"5px 14px 5px 10px",border:"none",cursor:"pointer",color:"#fff"}}>
                   <span style={{fontSize:12}}>👤</span>
                   <span style={{fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{currentUser.charAt(0).toUpperCase()+currentUser.slice(1)}</span>
-                  <span style={{fontSize:9,opacity:0.7,marginLeft:2}}>▼</span>
+                  <span style={{fontSize:9,opacity:0.7,marginLeft:2}}>{showUserPicker?"▲":"▼"}</span>
                 </button>
-                {showUserPicker&&(
-                  <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",background:"#fff",borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.2)",minWidth:160,zIndex:9999,overflow:"hidden",border:"1px solid #eee"}}>
-                    <div style={{padding:"8px 14px 6px",fontSize:10,color:"#aaa",fontWeight:700,letterSpacing:1,borderBottom:"1px solid #f0f0f0"}}>CHANGER D'UTILISATEUR</div>
-                    {["arnaud","audric",...employees.map(e=>e.name).filter(n=>n!=="arnaud"&&n!=="audric")].map(u=>(
-                      <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);setShowUserPicker(false);}}
-                        style={{display:"block",width:"100%",textAlign:"left",padding:"8px 16px",border:"none",background:currentUser===u?"rgba(213,19,23,0.07)":"transparent",cursor:"pointer",fontSize:13,fontWeight:currentUser===u?700:400,color:currentUser===u?BRAND.red:"#333",textTransform:"capitalize"}}>
-                        {currentUser===u?"✓ ":""}{u.charAt(0).toUpperCase()+u.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1418,6 +1409,21 @@ export default function App() {
           onSave={saveDept}
           onClose={()=>setDeptModal(null)}
         />
+      )}
+
+      {showUserPicker&&(
+        <TooltipPortal>
+          <div style={{position:"fixed",inset:0,zIndex:99990}} onClick={()=>setShowUserPicker(false)}/>
+          <div style={{position:"fixed",top:userPickerPos.top,right:userPickerPos.right,background:"#fff",borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.22)",minWidth:180,zIndex:99991,overflow:"hidden",border:"1px solid #eee",pointerEvents:"all"}}>
+            <div style={{padding:"8px 14px 6px",fontSize:10,color:"#aaa",fontWeight:700,letterSpacing:1,borderBottom:"1px solid #f0f0f0"}}>CHANGER D'UTILISATEUR</div>
+            {["arnaud","audric",...employees.map(e=>e.name).filter(n=>n!=="arnaud"&&n!=="audric")].map(u=>(
+              <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);setShowUserPicker(false);}}
+                style={{display:"block",width:"100%",textAlign:"left",padding:"9px 16px",border:"none",background:currentUser===u?"rgba(213,19,23,0.07)":"transparent",cursor:"pointer",fontSize:13,fontWeight:currentUser===u?700:400,color:currentUser===u?BRAND.red:"#333",textTransform:"capitalize",fontFamily:"Roboto,sans-serif"}}>
+                {currentUser===u?"✓  ":""}{u.charAt(0).toUpperCase()+u.slice(1)}
+              </button>
+            ))}
+          </div>
+        </TooltipPortal>
       )}
 
     </div>
