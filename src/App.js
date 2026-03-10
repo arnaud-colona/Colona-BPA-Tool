@@ -597,7 +597,7 @@ export default function App() {
 
       {/* ── TABS — sans "Saisie" ── */}
       <div style={S.tabs}>
-        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🧠 Mindmap"],["mermaid","📊 Mermaid"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
+        {[["overview","🏠 Vue d\'ensemble"],["tasks","📋 Tâches"],["taxonomy","🗺️ Cartographie"],["mermaid","🧠 Mindmap"],["versioning","🕓 Historique"],["settings","⚙️ Paramètres"]].map(([k,l])=>(
           <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -692,10 +692,100 @@ export default function App() {
           </div>
         )}
 
-        {/* ══ TAXONOMIE ══ */}
+
+// ── Task Hover Card with Inline Edit ─────────────────────────────────────────
+function TaskCard({ task, departments, taskTypes, softwares, onEdit, onNavigate }) {
+  const [hover, setHover] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({...task});
+  const [saving, setSaving] = useState(false);
+  const cardRef = React.useRef(null);
+  const dept = departments.find(d => d.id === task.DeptID);
+  const tt = taskTypes.find(t => t.id === task.TaskType);
+  const sws = (task.Softwares||"").split(",").map(s=>s.trim()).filter(Boolean);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await apiSaveTask({...form, Version: String(parseInt(form.Version||"1")+1)});
+      onEdit({...form});
+      setEditing(false);
+    } catch { alert("Erreur de sauvegarde"); }
+    setSaving(false);
+  };
+
+  const IL = { width:"100%", padding:"6px 9px", border:"1.5px solid #ddd", borderRadius:6, fontSize:12, background:"#fafafa", fontFamily:"Roboto,sans-serif", boxSizing:"border-box" };
+  const LB = { fontSize:10, fontWeight:700, color:"#888", display:"block", marginBottom:2, textTransform:"uppercase", letterSpacing:0.5 };
+
+  return (
+    <div ref={cardRef} style={{ position:"relative" }}
+      onMouseEnter={() => !editing && setHover(true)}
+      onMouseLeave={() => !editing && setHover(false)}>
+
+      {/* Task pill */}
+      <div style={{ fontSize:11, padding:"3px 7px", background:"rgba(255,255,255,0.85)", borderRadius:5, marginBottom:3, display:"flex", alignItems:"center", gap:5, cursor:"pointer", border:"1px solid transparent", transition:"border-color 0.15s" }}
+        onMouseEnter={e => e.currentTarget.style.borderColor="#ddd"}
+        onMouseLeave={e => e.currentTarget.style.borderColor="transparent"}>
+        {tt && <span style={{ color:tt.color, fontSize:12 }}>{tt.icon}</span>}
+        <span onClick={() => onNavigate(task.TaskID)} style={{ fontWeight:600, color:"#333", cursor:"pointer", textDecoration:"none", flex:1 }}
+          title="Cliquer pour voir dans Tâches">
+          ▸ {task.TaskName}
+        </span>
+        <button onClick={e => { e.stopPropagation(); setEditing(true); setForm({...task}); setHover(false); }}
+          style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"#bbb", padding:"0 2px", lineHeight:1 }}
+          title="Modifier">✏️</button>
+      </div>
+
+      {/* Hover tooltip */}
+      {hover && !editing && (
+        <div style={{ position:"absolute", left:0, top:"100%", zIndex:800, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.15)", pointerEvents:"none" }}>
+          <div style={{ fontWeight:700, fontSize:13, color:"#1a1a2e", marginBottom:6 }}>{task.TaskName}</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
+            {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
+            <span style={{ background:"#f5eef8", color:"#8e44ad", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:600 }}>{task.Frequency}</span>
+          </div>
+          {sws.length > 0 && <div style={{ fontSize:11, color:"#555", marginBottom:4 }}>💻 {sws.join(" · ")}</div>}
+          {task.Notes && <div style={{ fontSize:11, color:"#888", fontStyle:"italic", marginBottom:4 }}>"{task.Notes}"</div>}
+          {task.DocURL && <div style={{ fontSize:11, color:"#0078d4" }}>📎 Document lié</div>}
+          <div style={{ fontSize:10, color:"#ccc", marginTop:6, borderTop:"1px solid #f0f0f0", paddingTop:5 }}>Clic sur le nom → voir dans Tâches · ✏️ → modifier</div>
+        </div>
+      )}
+
+      {/* Inline edit drawer */}
+      {editing && (
+        <div style={{ position:"absolute", left:0, top:"100%", zIndex:900, background:"#fff", border:"1.5px solid #D51317", borderRadius:10, padding:"14px", minWidth:300, maxWidth:360, boxShadow:"0 12px 36px rgba(0,0,0,0.18)" }}>
+          <div style={{ fontWeight:700, fontSize:12, color:"#D51317", marginBottom:10, fontFamily:"BROTHER,sans-serif" }}>✏️ MODIFIER</div>
+          <div style={{ display:"grid", gap:8 }}>
+            <div><label style={LB}>Nom de la tâche</label><input style={IL} value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
+            <div><label style={LB}>Notes</label><input style={IL} placeholder="Notes…" value={form.Notes||""} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
+            <div><label style={LB}>Fréquence</label>
+              <select style={IL} value={form.Frequency} onChange={e=>setForm(f=>({...f,Frequency:e.target.value}))}>
+                {["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"].map(fr=><option key={fr}>{fr}</option>)}
+              </select>
+            </div>
+            <div><label style={LB}>Type</label>
+              <select style={IL} value={form.TaskType||""} onChange={e=>setForm(f=>({...f,TaskType:e.target.value}))}>
+                <option value="">— Aucun —</option>
+                {taskTypes.map(tt=><option key={tt.id} value={tt.id}>{tt.icon} {tt.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"flex-end" }}>
+            <button onClick={()=>setEditing(false)} style={{ background:"#f0f0f0", border:"none", borderRadius:6, padding:"7px 12px", cursor:"pointer", fontSize:12 }}>Annuler</button>
+            <button onClick={handleSave} disabled={saving} style={{ background:saving?"#ccc":"#D51317", color:"#fff", border:"none", borderRadius:6, padding:"7px 14px", cursor:"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", gap:5 }}>
+              {saving ? "…" : <><span style={{fontSize:14}}>💾</span> Sauvegarder</>}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+        {/* ══ CARTOGRAPHIE ══ */}
         {tab==="taxonomy"&&(
           <div style={{animation:"fadeSlideUp 0.4s ease"}}>
-            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>🧠 MINDMAP — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
+            <div style={{...S.card,borderLeft:`4px solid ${BRAND.red}`}}><h3 style={{...S.title,margin:"0 0 8px",fontSize:16,color:BRAND.red}}>🗺️ CARTOGRAPHIE — 3 PILIERS COLONA</h3><p style={{margin:0,fontSize:13,color:"#666"}}>Flux transversaux inter-piliers détectés automatiquement.</p></div>
             {Object.entries(PILLARS).map(([pk,pv])=>{
               const depts=deptsByPillar(pk);
               const ptasks=tasks.filter(t=>depts.find(d=>d.id===t.DeptID));
@@ -708,7 +798,7 @@ export default function App() {
                   {depts.map(d=>{const ts=tasksByDept(d.id);return <div key={d.id} style={{padding:"10px 14px",background:pv.bg,borderRadius:8,border:`1px solid ${pv.color}30`}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13}}>{d.name}</div><span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span></div>
                     <div style={{fontSize:11,color:"#888",marginTop:2}}>{d.manager}</div>
-                    {ts.length>0&&<div style={{marginTop:8}}>{ts.map(t=>{const tt=taskTypes.find(x=>x.id===t.TaskType);return <div key={t.TaskID} style={{fontSize:11,padding:"2px 6px",background:"rgba(255,255,255,0.7)",borderRadius:4,marginBottom:3,display:"flex",alignItems:"center",gap:4}}>{tt&&<span style={{color:tt.color}}>{tt.icon}</span>}▸ {t.TaskName}</div>;})}</div>}
+                    {ts.length>0&&<div style={{marginTop:8}}>{ts.map(t=><TaskCard key={t.TaskID} task={t} departments={departments} taskTypes={taskTypes} softwares={softwares} onEdit={updated=>setTasks(p=>p.map(x=>x.TaskID===updated.TaskID?updated:x))} onNavigate={taskId=>{setFilterDept(depts.find(d=>d.id===t.DeptID)?.id||"ALL");setTab("tasks");}}/>)}</div>}
                   </div>;})}
                 </div>
               </div>;
