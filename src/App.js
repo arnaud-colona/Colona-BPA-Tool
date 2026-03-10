@@ -1378,6 +1378,36 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* ── MODALS ── */}
+      {taskModal&&(
+        <TaskModal
+          editTask={taskModal==="new"?null:taskModal}
+          departments={departments}
+          softwares={softwares}
+          onSoftwareAdded={sw=>setSoftwares(p=>[...p,sw])}
+          taskTypes={taskTypes}
+          tasks={tasks}
+          parentProcesses={parentProcesses}
+          onAddProcess={p=>setParentProcesses(prev=>[...prev,p])}
+          employees={employees}
+          onSave={saveTask}
+          onClose={()=>setTaskModal(null)}
+          saving={saving}
+          showSync={showSync}
+          msalConfig={activeMsalConfig}
+          msToken={msToken}
+          onToken={(tok,inst,acc)=>setMsToken(tok)}
+        />
+      )}
+      {deptModal&&(
+        <DeptModal
+          dept={deptModal==="new"?null:deptModal}
+          onSave={saveDept}
+          onClose={()=>setDeptModal(null)}
+        />
+      )}
+
     </div>
   );
 }
