@@ -66,8 +66,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Description:"", Deps:"", DocURL:"", ParentID:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S" };
-const APP_VERSION = "v2.8.0";
-const APP_BUILD = "10/03/2026 14:47";
+const APP_VERSION = "v2.9.0";
+const APP_BUILD = "10/03/2026 14:51";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -566,9 +566,9 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
         onMouseLeave={e => { e.currentTarget.style.borderColor="transparent"; e.currentTarget.style.background="rgba(255,255,255,0.85)"; }}>
         {tt && <span style={{ color:tt.color, fontSize:12, flexShrink:0 }}>{tt.icon}</span>}
         <span
-          onClick={() => onNavigate(task.TaskID)}
-          style={{ fontWeight:600, color:"#2c2c3e", cursor:"pointer", flex:1, lineHeight:1.3 }}
-          title="Cliquer pour voir dans Tâches">
+          onClick={() => { setHover(false); onNavigate(task.TaskID); }}
+          style={{ fontWeight:600, color:"#2c2c3e", cursor:"pointer", flex:1, lineHeight:1.3, textDecoration:"underline", textDecorationColor:"#ccc" }}
+          title="Cliquer pour ouvrir l'édition de cette tâche">
           ▸ {task.TaskName}
         </span>
         <button
@@ -597,7 +597,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
           {task.DocURL && <div style={{ fontSize:11, color:"#0078d4" }}>📎 Document lié</div>}
           <div style={{ fontSize:10, color:"#bbb", marginTop:7, paddingTop:5, borderTop:"1px solid #f5f5f5", display:"flex", gap:10 }}>
             <span>🖊 ✏️ pour modifier</span>
-            <span>🔗 clic nom → Tâches</span>
+            <span>🔗 clic nom → éditer</span>
           </div>
         </div>
         </TooltipPortal>
@@ -918,7 +918,7 @@ export default function App() {
                   {depts.map(d=>{const ts=tasksByDept(d.id);return <div key={d.id} style={{padding:"10px 14px",background:pv.bg,borderRadius:8,border:`1px solid ${pv.color}30`}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontWeight:700,fontSize:13}}>{d.name}</div><span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span></div>
                     <div style={{fontSize:11,color:"#888",marginTop:2}}>{d.manager}</div>
-                    {ts.length>0&&<div style={{marginTop:8}}>{ts.map(t=><TaskCard key={t.TaskID} task={t} departments={departments} taskTypes={taskTypes} onEdit={updated=>setTasks(p=>p.map(x=>x.TaskID===updated.TaskID?updated:x))} onNavigate={()=>{setFilterDept(t.DeptID);setTab("tasks");}}/>)}</div>}
+                    {ts.length>0&&<div style={{marginTop:8}}>{ts.map(t=><TaskCard key={t.TaskID} task={t} departments={departments} taskTypes={taskTypes} onEdit={updated=>setTasks(p=>p.map(x=>x.TaskID===updated.TaskID?updated:x))} onNavigate={()=>{setFilterDept(t.DeptID);setTab("tasks");setTaskModal(t);}}/>)}</div>}
                   </div>;})}
                 </div>
               </div>;
