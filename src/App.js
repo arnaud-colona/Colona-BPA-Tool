@@ -271,7 +271,7 @@ function MermaidBlock({ code }) {
 
 
 // ── Parent Process Selector (autocomplete + add new) ─────────────────────────
-function ParentTaskSelector({ value, onChange, parentProcesses, onAddProcess, currentTaskId }) {
+function ParentTaskSelector({ value, onChange, parentProcesses, currentTaskId }) {
   const [input, setInput] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -318,7 +318,7 @@ function ParentTaskSelector({ value, onChange, parentProcesses, onAddProcess, cu
                 </div>
               ))}
               {showAdd && (
-                <div onMouseDown={() => { onAddProcess(input.trim()); onChange("__new__:"+input.trim()); setInput(input.trim()); setOpen(false); }}
+                <div onMouseDown={() => { onChange("__new__:"+input.trim()); setInput(input.trim()); setOpen(false); }}
                   style={{ padding:"10px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, background:"#f0fff4", borderTop:"1px solid #e0e0e0" }}
                   onMouseEnter={e=>e.currentTarget.style.background="#d4f0dc"}
                   onMouseLeave={e=>e.currentTarget.style.background="#f0fff4"}>
@@ -375,13 +375,17 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
             </div>
             <div><label style={S.label}>📝 Nom de la tâche *</label><input style={S.input} placeholder="Ex: Valider bon de commande" value={form.TaskName} onChange={e=>setForm(f=>({...f,TaskName:e.target.value}))}/></div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>🏷️ Type de tâche</label><TaskTypeSelector value={form.TaskType} onChange={v=>setForm(f=>({...f,TaskType:v}))} taskTypes={taskTypes}/></div>
+            <div style={{gridColumn:"1 / -1"}}>
+              <label style={S.label}>🔗 Processus parent (optionnel — regroupe les tâches d'un même processus)</label>
+              <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const pname=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name:pname});setForm(f=>({...f,ParentID:newId}));}else{setForm(f=>({...f,ParentID:v}));}}} parentProcesses={parentProcesses} currentTaskId={editTask?.TaskID||""}/>
+            </div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💻 Logiciels (multi-sélection)</label><SoftwareMultiSelector value={form.Softwares} onChange={v=>setForm(f=>({...f,Softwares:v}))} softwares={softwares} onSoftwareAdded={onSoftwareAdded} showSync={showSync}/></div>
             <div><label style={S.label}>📅 Fréquence</label>
               <select style={S.select} value={form.Frequency} onChange={e=>setForm(f=>({...f,Frequency:e.target.value}))}>
                 {FREQUENCIES.map(fr=><option key={fr}>{fr}</option>)}
               </select>
             </div>
-            <div style={{gridColumn:"1 / -1"}}><label style={S.label}>📎 Document SharePoint</label><SharePointPicker value={form.DocURL||""} onChange={v=>setForm(f=>({...f,DocURL:v}))} msalConfig={msalConfig} msToken={msToken} onToken={onToken}/></div>
+            <div><label style={S.label}>📎 Document SharePoint</label><SharePointPicker value={form.DocURL||""} onChange={v=>setForm(f=>({...f,DocURL:v}))} msalConfig={msalConfig} msToken={msToken} onToken={onToken}/></div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>🔗 Dépendances</label>
               <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:"10px 12px",border:"1.5px solid #ddd",borderRadius:7,background:"#fafafa",minHeight:44}}>
                 {departments.filter(d=>d.id!==form.DeptID).map(d=>{
@@ -391,10 +395,6 @@ function TaskModal({ editTask, departments, softwares, onSoftwareAdded, taskType
                 })}
               </div>
               {form.Deps&&<div style={{fontSize:12,color:BRAND.green,marginTop:6}}>✓ {form.Deps.split(",").filter(Boolean).length} dépendance(s)</div>}
-            </div>
-            <div style={{gridColumn:"1 / -1"}}>
-              <label style={S.label}>🔗 Processus parent (optionnel — regroupe les tâches d'un même processus)</label>
-              <ParentTaskSelector value={form.ParentID||""} onChange={v=>{if(v.startsWith("__new__:")){const name=v.slice(8);const newId="PP"+Date.now();onAddProcess({id:newId,name});setForm(f=>({...f,ParentID:newId}));}else setForm(f=>({...f,ParentID:v}));}} parentProcesses={parentProcesses} onAddProcess={p=>onAddProcess(p)} currentTaskId={editTask?.TaskID||""}/>
             </div>
             <div style={{gridColumn:"1 / -1"}}><label style={S.label}>💬 Notes</label><input style={S.input} placeholder="Volume, contraintes…" value={form.Notes} onChange={e=>setForm(f=>({...f,Notes:e.target.value}))}/></div>
           </div>
@@ -447,6 +447,21 @@ function FaviconSetter({ img }) {
 }
 
 
+// ── Process Add Card ─────────────────────────────────────────────────────────
+function ProcessAddCard({ onAdd, S }) {
+  const [val, setVal] = useState("");
+  return (
+    <div style={{...S.card, borderLeft:"4px solid #EB6011", marginBottom:0}}>
+      <h4 style={{margin:"0 0 12px", fontFamily:"BROTHER,sans-serif", fontSize:12, color:"#b05010", letterSpacing:1}}>AJOUTER UN PROCESSUS MANUELLEMENT</h4>
+      <div style={{display:"flex", gap:10}}>
+        <input style={{...S.input, flex:1}} placeholder="Nom du processus (ex: Gestion commande fournisseur)…" value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&val.trim()){onAdd(val.trim());setVal("");}}}/>
+        <button onClick={()=>{if(!val.trim())return;onAdd(val.trim());setVal("");}} disabled={!val.trim()} style={{...S.btn(!val.trim()?"#ccc":"#EB6011"), whiteSpace:"nowrap"}}>➕ Ajouter</button>
+      </div>
+    </div>
+  );
+}
+
+
 // ── Task Row Hover Tooltip (Tasks page - larger) ─────────────────────────────
 function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
   const dept = departments.find(d => d.id === task.DeptID);
@@ -455,7 +470,7 @@ function TaskRowTooltip({ task, departments, taskTypes, parentTasks, pos }) {
   const parent = parentTasks.find(p => p.TaskID === task.ParentID);
   const deps = (task.Deps||"").split(",").map(s=>s.trim()).filter(Boolean);
   const left = Math.min(pos.x + 16, window.innerWidth - 380);
-  const top = Math.max(10, pos.y - 220);
+  const top = pos.y > window.innerHeight * 0.6 ? Math.max(10, pos.y - 280) : pos.y + 16;
   return (
     <div style={{ position:"fixed", left, top, zIndex:9999, background:"#fff", border:"1.5px solid #D51317", borderRadius:12, padding:"16px 18px", width:340, boxShadow:"0 12px 36px rgba(0,0,0,0.18)", pointerEvents:"none" }}>
       <div style={{ fontWeight:700, fontSize:15, color:"#1a1a2e", marginBottom:8 }}>{task.TaskName}</div>
@@ -521,7 +536,7 @@ function TaskCard({ task, departments, taskTypes, onEdit, onNavigate }) {
 
       {/* Hover tooltip - fixed position to stay above footer */}
       {hover && !editing && (
-        <div style={{ position:"fixed", left: Math.min(mousePos.x + 12, window.innerWidth - 340), top: Math.max(10, mousePos.y - 160), zIndex:9999, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.2)", pointerEvents:"none" }}>
+        <div style={{ position:"fixed", left: Math.min(mousePos.x + 16, window.innerWidth - 340), top: mousePos.y > window.innerHeight * 0.6 ? mousePos.y - 220 : mousePos.y + 16, zIndex:9999, background:"#fff", border:"1.5px solid #EB6011", borderRadius:10, padding:"12px 14px", minWidth:260, maxWidth:320, boxShadow:"0 8px 28px rgba(0,0,0,0.2)", pointerEvents:"none" }}>
           <div style={{ fontWeight:700, fontSize:13, color:"#1a1a2e", marginBottom:6 }}>{task.TaskName}</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
             {tt && <span style={{ background:tt.color+"22", color:tt.color, borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{tt.icon} {tt.name}</span>}
