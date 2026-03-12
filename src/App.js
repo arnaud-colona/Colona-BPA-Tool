@@ -2,6 +2,59 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // ── Tooltip Portal — renders at document.body to escape any overflow/transform ──
+// ── Simple Password Login Screen ────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const { useState } = React;
+  const [pwd, setPwd] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = () => {
+    if (!pwd.trim()) return;
+    setLoading(true);
+    setTimeout(() => {
+      if (pwd === "gobpago") {
+        onLogin();
+      } else {
+        setError("Mot de passe incorrect.");
+        setPwd("");
+      }
+      setLoading(false);
+    }, 400);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#D51317 0%,#a00e12 40%,#1a1a2e 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Roboto,sans-serif", position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(45deg,rgba(255,255,255,0.03) 0,rgba(255,255,255,0.03) 1px,transparent 0,transparent 50%)", backgroundSize:"20px 20px" }}/>
+      <div style={{ position:"absolute", right:-60, bottom:-60, opacity:0.06, fontSize:400, lineHeight:1 }}>🏭</div>
+      <div style={{ position:"relative", background:"rgba(255,255,255,0.97)", borderRadius:20, padding:"44px 48px", width:400, maxWidth:"90vw", boxShadow:"0 32px 80px rgba(0,0,0,0.4)" }}>
+        <div style={{ textAlign:"center", marginBottom:32 }}>
+          <img src={IMG_LOGO} alt="Colona" style={{ height:56, objectFit:"contain", marginBottom:16 }}/>
+          <div style={{ fontFamily:"BROTHER,sans-serif", fontSize:18, color:"#D51317", letterSpacing:1, marginBottom:4 }}>BUSINESS PROCESS ANALYSIS</div>
+          <div style={{ fontSize:12, color:"#aaa", letterSpacing:2 }}>WAREMME — SINCE 1963</div>
+        </div>
+        <div style={{ marginBottom:16 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:"#555", display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Mot de passe</label>
+          <input
+            type="password"
+            value={pwd}
+            onChange={e=>{ setPwd(e.target.value); setError(""); }}
+            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+            autoFocus
+            placeholder="••••••••"
+            style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${error?"#D51317":"#ddd"}`, borderRadius:10, fontSize:14, boxSizing:"border-box", outline:"none", fontFamily:"Roboto,sans-serif" }}
+          />
+          {error && <div style={{ color:"#D51317", fontSize:12, marginTop:6, fontWeight:600 }}>⚠️ {error}</div>}
+        </div>
+        <button onClick={handleSubmit} disabled={!pwd.trim()||loading}
+          style={{ width:"100%", padding:"14px", background:pwd.trim()&&!loading?"#D51317":"#ccc", color:"#fff", border:"none", borderRadius:10, fontWeight:700, fontSize:15, cursor:"pointer", transition:"background 0.2s" }}>
+          {loading ? "⏳ Connexion…" : "🔑 Accéder à l'outil"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function TooltipPortal({ children }) {
   const el = useRef(document.createElement('div'));
   useEffect(() => {
@@ -90,8 +143,8 @@ const DEFAULT_TASK_TYPES = [
 const FREQUENCIES = ["Journalier","Hebdomadaire","Bi-hebdomadaire","Mensuel","Trimestriel","Ponctuel"];
 const TASK_TEMPLATE = { TaskID:"", DeptID:"", ServiceName:"", TaskName:"", Softwares:"", TaskType:"", Frequency:"Journalier", Notes:"", Deps:"", DocURL:"", ParentID:"", Responsable:"", DigitalLevel:"", DataUsed:"[]", Irritants:"", Opportunities:"", HumanDeps:"", ClientsInt:"[]", ClientsExt:"[]", Validated:false, ValidatedAt:"", UpdatedAt:"", CreatedAt:"", Version:"1" };
 const DEPT_TEMPLATE = { id:"", name:"", manager:"", headcount:0, pillar:"P2S", keyuser:"" };
-const APP_VERSION = "v3.13.1";
-const APP_BUILD = "11/03/2026 11:45";
+const APP_VERSION = "v3.15.0";
+const APP_BUILD = "12/03/2026 11:00";
 const BRAND = { red:"#D51317", green:"#8CBE26", blue:"#005CA9", orange:"#EB6011" };
 
 function uid() { return "T"+Date.now()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -167,7 +220,7 @@ function SharePointPicker({ value, onChange, msalConfig, msToken, onToken }) {
   const fileName = value ? decodeURIComponent(value.split("/").pop().split("?")[0]) : "";
 
   const connectMicrosoft = async () => {
-    if (!msalConfig?.clientId) { alert("Configure ton Azure Client ID dans Paramètres → SharePoint"); return; }
+    if (!msalConfig?.clientId) { alert("Configure l'App Azure AD dans Paramètres → SharePoint"); return; }
     setBrowsing(true);
     try {
       // Dynamic MSAL load
@@ -978,19 +1031,15 @@ export default function App() {
   const [hoveredTask,setHoveredTask]=useState(null);
   const [hoverPos,setHoverPos]=useState({x:0,y:0});
   const [mermaidMode,setMermaidMode]=useState("global");
-  const [msalConfig,setMsalConfig]=useState({clientId:"",tenantId:""});
-  const [msalConfigAudric,setMsalConfigAudric]=useState({clientId:"",tenantId:""});
-  const [currentUser,setCurrentUser]=useState("arnaud");
-  const activeMsalConfig = currentUser==="arnaud" ? msalConfig : msalConfigAudric;
+  const [azureConfig,setAzureConfig]=useState(()=>{ try{ const s=sessionStorage.getItem("colona_azure_cfg"); return s?JSON.parse(s):{clientId:"",tenantId:""}; }catch{return {clientId:"",tenantId:""};}});
+  const [authUser,setAuthUser]=useState(null);   // { account, token, msalInstance }
   const [msToken,setMsToken]=useState(null);
+  const currentUser = authUser?.account?.name || authUser?.account?.username || "Utilisateur";
   const [newTypeName,setNewTypeName]=useState("");
   const [newTypeIcon,setNewTypeIcon]=useState("📌");
   const [newTypeColor,setNewTypeColor]=useState("#8e44ad");
   const [odooUrl,setOdooUrl]=useState("");
   const [newProcessName,setNewProcessName]=useState("");
-  const [showUserPicker,setShowUserPicker]=useState(false);
-  const [userPickerPos,setUserPickerPos]=useState({top:0,right:0});
-  const userBtnRef=useRef(null);
   const [odooLoading,setOdooLoading]=useState(false);
   const [versionLog,setVersionLog]=useState([{v:1,ts:new Date().toLocaleString("fr-BE"),desc:"Connexion à Google Sheets…"}]);
 
@@ -1009,6 +1058,12 @@ export default function App() {
   },[]);
 
   const showSync=(type,text)=>{setSyncMsg({type,text});setTimeout(()=>setSyncMsg(null),4000);};
+  const handleLogin=()=>{ setAuthUser({name:"Utilisateur"}); };
+  const handleLogout=()=>{
+    setAuthUser(null);
+    showSync("ok","👋 Déconnecté");
+  };
+  const handleAzureConfigSave=(cfg)=>{ setAzureConfig(cfg); sessionStorage.setItem("colona_azure_cfg",JSON.stringify(cfg)); };
 
   const saveTask=async(form)=>{
     if(!form.DeptID||!form.TaskName) return;
@@ -1088,6 +1143,8 @@ export default function App() {
     ::-webkit-scrollbar-thumb{background:#D51317;border-radius:3px}
   `;
 
+  if (!authUser) return <LoginScreen onLogin={handleLogin}/>;
+
   return (
     <div style={S.app}>
       <style>{CSS}</style>
@@ -1111,11 +1168,17 @@ export default function App() {
               <div style={{...S.title,color:"#FDCA00",fontSize:20}}>{loading?<><Spinner/> Chargement…</>:tasks.length+" PROCESSUS"}</div>
               <div style={{color:"rgba(255,255,255,0.5)",fontSize:11}}>{loading?"Connexion…":"✅ Sync Google Sheets"}</div>
               <div style={{position:"relative"}}>
-                <button ref={userBtnRef} onClick={()=>{if(!showUserPicker){const r=userBtnRef.current.getBoundingClientRect();setUserPickerPos({top:r.bottom+6,right:window.innerWidth-r.right});}setShowUserPicker(v=>!v);}} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"5px 14px 5px 10px",border:"none",cursor:"pointer",color:"#fff"}}>
-                  <span style={{fontSize:12}}>👤</span>
-                  <span style={{fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{currentUser.charAt(0).toUpperCase()+currentUser.slice(1)}</span>
-                  <span style={{fontSize:9,opacity:0.7,marginLeft:2}}>{showUserPicker?"▲":"▼"}</span>
-                </button>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(0,0,0,0.25)",borderRadius:20,padding:"5px 14px 5px 10px"}}>
+                    <span style={{fontSize:18}}>👤</span>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#fff"}}>Colona BPA</div>
+                    </div>
+                  </div>
+                  <button onClick={handleLogout} title="Se déconnecter" style={{background:"rgba(0,0,0,0.3)",border:"none",borderRadius:20,padding:"6px 12px",cursor:"pointer",color:"rgba(255,255,255,0.85)",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>
+                    🚪 Déco
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1153,21 +1216,41 @@ export default function App() {
               ))}
             </div>
             <div style={S.card}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                 <h3 style={{...S.title,margin:0,fontSize:16,color:BRAND.red}}>{departments.length} DÉPARTEMENTS COLONA</h3>
-                <img src={IMG_OIGNON} alt="" style={{height:80,objectFit:"contain",animation:"floatSlow 4s ease-in-out infinite"}}/>
+                <span style={{fontSize:12,color:"#aaa"}}>{departments.filter(d=>tasksByDept(d.id).length>0).length} départements actifs · {tasks.length} processus</span>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:8}}>
-                {departments.map(d=>(
-                  <div key={d.id} onClick={()=>{setFilterDept(d.id);setTab("tasks");}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"rgba(255,255,255,0.7)",borderRadius:8,border:`1px solid ${PILLARS[d.pillar]?.color||"#ccc"}20`,cursor:"pointer"}}>
-                    <Badge pillar={d.pillar}/>
-                    <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.name}</div><div style={{fontSize:11,color:"#999",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.manager}</div></div>
-                    <span style={{fontSize:13,letterSpacing:-2}}>{headcountEmoji(d.headcount)}</span>
-                    {tasksByDept(d.id).length>0&&<div style={{width:8,height:8,borderRadius:"50%",background:BRAND.green,flexShrink:0}}/>}
+              {Object.entries(PILLARS).map(([pk,pv])=>{
+                const pillarDepts=deptsByPillar(pk);
+                if(pillarDepts.length===0) return null;
+                return <div key={pk} style={{marginBottom:16}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <span style={{background:pv.color,color:"#fff",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700}}>{pv.icon} {pv.short}</span>
+                    <span style={{fontSize:12,color:"#aaa",fontWeight:600}}>{pv.label}</span>
                   </div>
-                ))}
-              </div>
-              <div style={{marginTop:14,padding:"10px 14px",background:"rgba(213,19,23,0.04)",borderRadius:8,fontSize:13,color:"#555",borderLeft:`4px solid ${BRAND.red}`}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:6}}>
+                    {pillarDepts.map(d=>{
+                      const tc=tasksByDept(d.id).length;
+                      return <div key={d.id}
+                        onClick={()=>{setFilterDept(d.id);setTab("tasks");}}
+                        style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"rgba(255,255,255,0.8)",borderRadius:8,border:`1px solid ${pv.color}25`,cursor:"pointer",transition:"box-shadow 0.15s"}}
+                        onMouseEnter={e=>e.currentTarget.style.boxShadow=`0 2px 10px ${pv.color}30`}
+                        onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:12,color:"#2c2c3e",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.name}</div>
+                          <div style={{fontSize:10,color:"#aaa",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.manager||"—"}</div>
+                        </div>
+                        <div style={{flexShrink:0,textAlign:"right"}}>
+                          {tc>0
+                            ?<span style={{background:pv.color+"18",color:pv.color,borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:700}}>{tc} proc.</span>
+                            :<span style={{color:"#ccc",fontSize:11}}>—</span>}
+                        </div>
+                      </div>;
+                    })}
+                  </div>
+                </div>;
+              })}
+              <div style={{marginTop:12,padding:"10px 14px",background:"rgba(213,19,23,0.04)",borderRadius:8,fontSize:13,color:"#555",borderLeft:`4px solid ${BRAND.red}`}}>
                 👥 <strong>{totalHC}</strong> employés · <strong>{departments.length}</strong> depts · 🟢 = tâches · 💻 <strong>{softwares.length}</strong> logiciels
               </div>
             </div>
@@ -1370,7 +1453,7 @@ export default function App() {
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
                 <span style={{fontSize:11,color:"#888"}}>🕐 {APP_BUILD}</span>
                 <span style={{width:1,height:16,background:"rgba(0,92,169,0.2)"}}/>
-                <span title={"v3.13.1 — Fix écran blanc Services (hook dans IIFE → composant ServicesTab)\nv3.13.0 — Services persistés Sheets, édition inline nom service\nv3.12.0 — Vue d'ensemble: bloc services + compteur services dans piliers\nv3.11.1 — IT dans DEFAULT_DEPARTMENTS, merge Sheets+défauts au chargement\nv3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
+                <span title={"v3.15.0 — Login mot de passe simple, départements groupés par pilier\nv3.14.0 — Azure AD auth globale: LoginScreen, SSO silencieux, logout\nv3.13.1 — Fix écran blanc Services (hook dans IIFE → composant ServicesTab)\nv3.13.0 — Services persistés Sheets, édition inline nom service\nv3.12.0 — Vue d'ensemble: bloc services + compteur services dans piliers\nv3.11.1 — IT dans DEFAULT_DEPARTMENTS, merge Sheets+défauts au chargement\nv3.11.0 — Départements persistés Google Sheets (getDepts/saveDept/deleteDept)\nv3.10.2 — Suppression crayon TaskCard (3 Piliers)\nv3.10.1 — Fix DeptModal écran blanc (LS/IS non définis)\nv3.10.0 — Logo postimg, export service nom, nowrap service/type, preview notes\nv3.9.1 — Fix: tâches sans département visibles avec avertissement\nv3.9.0 — Services, keyuser depts, filtre service, mise à jour départements\nv3.8.0 — Clic département dans 3 Piliers → filtre Processus\nv3.7.0 — Grand ✕ reset filtres, fix ajout processus parent, switcher utilisateur\nv3.6.0 — Clic ligne, Statut process, ×-Filtres, logo Colona\nv3.5.0 — Clic nom process, clic dept/pilier overview, desc pre-remplie\nv3.4.0 — Bugfix sync Google Sheet"} style={{fontSize:10,color:"#aaa",cursor:"help",borderBottom:"1px dashed #ccc"}}>📋 changelog</span>
               </div>
             </div>
 
@@ -1498,36 +1581,31 @@ export default function App() {
               <div>
                 <div style={{...S.card,borderLeft:"4px solid #0078d4",background:"rgba(0,120,212,0.03)"}}>
                   <h3 style={{...S.title,margin:"0 0 8px",color:"#0078d4",fontSize:15}}>☁️ INTÉGRATION SHAREPOINT / MICROSOFT</h3>
-                  <p style={{margin:"0 0 12px",fontSize:13,color:"#666"}}>Configure les apps Azure AD pour Arnaud et Audric. Le bon compte sera utilisé selon l'utilisateur actif en haut à droite.</p>
-                  <div style={{display:"flex",gap:8,marginBottom:16}}>
-                    {["arnaud","audric"].map(u=>(
-                      <div key={u} style={{flex:1,padding:"10px 14px",background:currentUser===u?"rgba(0,120,212,0.1)":"#f8f8f8",border:`2px solid ${currentUser===u?"#0078d4":"#e0e0e0"}`,borderRadius:8,cursor:"pointer",textAlign:"center",fontWeight:currentUser===u?700:400,fontSize:13}} onClick={()=>setCurrentUser(u)}>
-                        👤 {u.charAt(0).toUpperCase()+u.slice(1)} {currentUser===u&&"✓"}
-                      </div>
-                    ))}
+                  <p style={{margin:"0 0 4px",fontSize:13,color:"#666"}}>Un seul App Registration Azure AD pour toute l'application — partagé par tous les utilisateurs.</p>
+                  <div style={{marginTop:12,display:"flex",alignItems:"center",gap:10,background:"rgba(0,120,212,0.06)",borderRadius:10,padding:"10px 14px"}}>
+                    <span style={{fontSize:20}}>👤</span>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:13,color:"#0078d4"}}>{authUser?.account?.name||"—"}</div>
+                      <div style={{fontSize:11,color:"#888"}}>{authUser?.account?.username||""}</div>
+                    </div>
+                    <span style={{marginLeft:"auto",background:"#e6f7ed",color:"#00A23A",border:"1px solid #00A23A40",borderRadius:10,padding:"3px 10px",fontSize:11,fontWeight:700}}>✅ Connecté</span>
                   </div>
                 </div>
-                {["arnaud","audric"].map(u=>{
-                  const cfg = u==="arnaud" ? msalConfig : msalConfigAudric;
-                  const setCfg = u==="arnaud" ? setMsalConfig : setMsalConfigAudric;
-                  const isActive = currentUser===u;
-                  return (
-                    <div key={u} style={{...S.card,borderLeft:`4px solid ${isActive?"#0078d4":"#ccc"}`,opacity:isActive?1:0.6}}>
-                      <h4 style={{...S.title,margin:"0 0 12px",fontSize:12,color:isActive?"#0078d4":"#999"}}>
-                        👤 {u.toUpperCase()} {isActive&&<span style={{background:"#0078d4",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,marginLeft:6}}>ACTIF</span>}
-                      </h4>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                        <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>CLIENT ID (Application ID)</label>
-                          <input style={S.input} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={cfg.clientId} onChange={e=>setCfg(c=>({...c,clientId:e.target.value}))}/>
-                        </div>
-                        <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>TENANT ID (optionnel)</label>
-                          <input style={S.input} placeholder="common ou xxxxxxxx-xxxx-xxxx-xxxx" value={cfg.tenantId||""} onChange={e=>setCfg(c=>({...c,tenantId:e.target.value}))}/>
-                        </div>
-                      </div>
-                      <div style={{fontSize:11,color:"#888",marginTop:8}}>Redirect URI à configurer dans Azure : <code style={{background:"#f0f0f0",padding:"2px 6px",borderRadius:4}}>https://colona-bpa-tool.vercel.app</code></div>
+                <div style={{...S.card,borderLeft:"4px solid #0078d4"}}>
+                  <h4 style={{...S.title,margin:"0 0 16px",fontSize:13,color:"#0078d4"}}>🔑 CONFIGURATION AZURE AD</h4>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:4}}>CLIENT ID (Application ID) *</label>
+                      <input style={S.input} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={azureConfig.clientId} onChange={e=>{const c={...azureConfig,clientId:e.target.value};handleAzureConfigSave(c);}}/>
                     </div>
-                  );
-                })}
+                    <div><label style={{fontSize:11,fontWeight:700,color:"#555",display:"block",marginBottom:4}}>TENANT ID</label>
+                      <input style={S.input} placeholder="common ou xxxxxxxx-xxxx-xxxx-xxxx" value={azureConfig.tenantId||""} onChange={e=>{const c={...azureConfig,tenantId:e.target.value};handleAzureConfigSave(c);}}/>
+                    </div>
+                  </div>
+                  <div style={{fontSize:11,color:"#888",marginTop:10,background:"#f8f8f8",borderRadius:8,padding:"8px 12px"}}>
+                    📌 Redirect URI à configurer dans Azure Portal :<br/>
+                    <code style={{color:"#0078d4",fontWeight:700}}>https://colona-bpa-tool.vercel.app</code>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -1551,7 +1629,7 @@ export default function App() {
           onClose={()=>setTaskModal(null)}
           saving={saving}
           showSync={showSync}
-          msalConfig={activeMsalConfig}
+          msalConfig={azureConfig}
           msToken={msToken}
           onToken={(tok,inst,acc)=>setMsToken(tok)}
         />
@@ -1564,20 +1642,7 @@ export default function App() {
         />
       )}
 
-      {showUserPicker&&(
-        <TooltipPortal>
-          <div style={{position:"fixed",inset:0,zIndex:99990}} onClick={()=>setShowUserPicker(false)}/>
-          <div style={{position:"fixed",top:userPickerPos.top,right:userPickerPos.right,background:"#fff",borderRadius:10,boxShadow:"0 8px 28px rgba(0,0,0,0.22)",minWidth:180,zIndex:99991,overflow:"hidden",border:"1px solid #eee",pointerEvents:"all"}}>
-            <div style={{padding:"8px 14px 6px",fontSize:10,color:"#aaa",fontWeight:700,letterSpacing:1,borderBottom:"1px solid #f0f0f0"}}>CHANGER D'UTILISATEUR</div>
-            {["arnaud","audric",...employees.map(e=>e.name).filter(n=>n!=="arnaud"&&n!=="audric")].map(u=>(
-              <button key={u} onClick={()=>{setCurrentUser(u);setMsToken(null);setShowUserPicker(false);}}
-                style={{display:"block",width:"100%",textAlign:"left",padding:"9px 16px",border:"none",background:currentUser===u?"rgba(213,19,23,0.07)":"transparent",cursor:"pointer",fontSize:13,fontWeight:currentUser===u?700:400,color:currentUser===u?BRAND.red:"#333",textTransform:"capitalize",fontFamily:"Roboto,sans-serif"}}>
-                {currentUser===u?"✓  ":""}{u.charAt(0).toUpperCase()+u.slice(1)}
-              </button>
-            ))}
-          </div>
-        </TooltipPortal>
-      )}
+
 
     </div>
   );
